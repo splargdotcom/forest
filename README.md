@@ -4,6 +4,12 @@
 
 **[Open Forest](https://splargdotcom.github.io/forest/)**
 
+<!-- site-screenshot:start -->
+<p align="center">
+  <a href="https://splargdotcom.github.io/forest/"><img src="docs/screenshots/site.png" alt="Forest live site screenshot" width="900"></a>
+</p>
+<!-- site-screenshot:end -->
+
 Forest is an interactive browser-based evolution sandbox. It starts with a crowded population of genetically varied saplings and lets you watch inherited traits interact with light, water, neighbours, reproduction, mutation and changing environmental conditions.
 
 The aim is educational rather than predictive: the model makes the chain from **genotype → phenotype → competition → reproductive success → inheritance** visible and testable.
