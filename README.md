@@ -2,6 +2,8 @@
 
 **Genes, growth & the struggle for light.**
 
+**[Open Forest](https://splargdotcom.github.io/forest/)**
+
 Forest is an interactive browser-based evolution sandbox. It starts with a crowded population of genetically varied saplings and lets you watch inherited traits interact with light, water, neighbours, reproduction, mutation and changing environmental conditions.
 
 The aim is educational rather than predictive: the model makes the chain from **genotype → phenotype → competition → reproductive success → inheritance** visible and testable.
@@ -69,4 +71,8 @@ The current application is self-contained in the root `index.html`.
 
 ## GitHub Pages
 
-A GitHub Actions workflow is included in `.github/workflows/pages.yml` to deploy the repository as a static site. Once GitHub Pages is enabled with **Source: GitHub Actions**, pushes to `main` will publish automatically.
+The live build is published at **https://splargdotcom.github.io/forest/**. GitHub Actions redeploys the site automatically when `main` changes.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
