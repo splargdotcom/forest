@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forest — genes, growth & competition</title>
+<style>
+:root{color-scheme:dark;--bg:#0e1916;--panel:#17251f;--raised:#203229;--line:#34473b;--text:#edf2df;--muted:#a6b6a7;--accent:#d8e9a2;--cyan:#8bd2ce;--pink:#d6b2df;--warn:#efb87b;--red:#ee9f8c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}button,input,select{font:inherit}button,select,input[type=number]{color:var(--text);background:var(--raised);border:1px solid var(--line);border-radius:7px;padding:7px 10px}button{cursor:pointer}button:hover{background:#31483a;border-color:#7d927c}button:disabled{opacity:.4;cursor:default}button.active,button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#223020}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}button.quiet{background:transparent}button.small{font-size:11px;padding:5px 8px}button.link{border:0;background:none;color:var(--cyan);padding:0;text-decoration:underline;text-underline-offset:3px}label{cursor:pointer}h1,h2,h3,p{margin:0}h1{font-size:20px;font-weight:620;letter-spacing:-.5px}h2{font-size:17px;font-weight:620}h3{font-size:13px;font-weight:650}strong{font-weight:650}.muted,.mini{color:var(--muted)}.mini{font-size:11px;line-height:1.55}.eyebrow{font-size:10px;font-weight:650;letter-spacing:1.8px;text-transform:uppercase;color:var(--accent)}
+header{height:78px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:13px}.brand svg{color:var(--accent);flex-shrink:0}.brand .mini{font-size:12px}.playback{display:flex;align-items:center;gap:7px}.speeds{display:flex;gap:3px}.speeds button{min-width:34px;padding:7px}.primary{background:var(--accent);border-color:var(--accent);color:#223020}.app{display:grid;grid-template-columns:minmax(0,1fr) 392px;height:calc(100dvh - 78px)}
+.stage{position:relative;overflow:hidden;min-height:360px;min-width:0;background:#1b3028}.stage canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}.stage canvas.dragging{cursor:grabbing}.worldTop{position:absolute;top:21px;left:24px;right:24px;display:flex;justify-content:space-between;gap:18px;pointer-events:none}.year{font-size:32px;line-height:1.2;font-weight:560;letter-spacing:-1.5px}.season{font-size:12px;color:#cad6bf;margin-top:5px}.livePill{font-size:11px;border:1px solid #6a7e594f;align-self:flex-start;background:#12241dbd;padding:6px 10px;border-radius:20px}.stageControls{position:absolute;left:24px;top:105px;display:flex;align-items:center;gap:7px}.stageControls select{max-width:155px;font-size:11px;background:#14251edc}.overlayLegend{font-size:10px;line-height:1.3;max-width:100px;text-shadow:0 1px 4px #000}.legendGradient{height:5px;margin-bottom:4px;border-radius:5px;background:linear-gradient(90deg,#78adcf,#edca73)}.zoom{position:absolute;right:19px;bottom:20px;display:flex;gap:4px}.zoom button{background:#13221dea;min-width:32px}.worldBottom{position:absolute;left:24px;right:24px;bottom:67px;pointer-events:none}.summary{display:flex;gap:26px;margin-bottom:13px}.summary b{font-size:20px;font-weight:560;display:block;line-height:1.1}.summary span{font-size:10px;letter-spacing:.3px;color:#bfceb4}.insight{max-width:590px;padding:13px 15px;background:#0c1b16df;border:1px solid #6a7e594f;border-radius:9px;box-shadow:0 8px 30px #09140f38}.insight b{color:var(--accent);font-weight:600}.insight p{font-size:12px;color:#c6d2bf;line-height:1.5;margin-top:3px}.stageHint{position:absolute;bottom:26px;left:24px;font-size:10px;color:#b8c8b0;max-width:calc(100% - 164px)}.toast{position:absolute;left:50%;top:22px;transform:translateX(-50%);padding:9px 14px;background:#e1edc6;color:#192619;border-radius:8px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:5;text-align:center;max-width:80%}
+aside{border-left:1px solid var(--line);background:var(--panel);overflow:auto;scrollbar-width:thin;scrollbar-color:#506b57 transparent}.environment{padding:17px 19px 13px;border-bottom:1px solid var(--line)}.row{display:flex;align-items:center;justify-content:space-between;gap:9px}.row+.row{margin-top:7px}.presetRow{display:flex;gap:5px;margin-top:10px}.presetRow button{flex:1;font-size:11px;padding:6px 4px}.envSliders{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:11px}.envSliders .row{font-size:11px}input[type=range]{width:100%;margin:7px 0 0;accent-color:var(--accent)}input[type=checkbox]{accent-color:var(--accent);margin:0;vertical-align:middle}.switch{font-size:11px;display:flex;align-items:center;gap:6px}.settings{margin-top:11px;border-top:1px solid var(--line);padding-top:9px}.settings summary{color:var(--muted);cursor:pointer;font-size:11px}.settings .row{margin-top:10px;font-size:11px}.settings input[type=number]{width:92px;padding:4px 6px}.restartRow{display:flex;gap:5px;margin-top:10px}.restartRow button{flex:1;font-size:11px}.tabs{display:flex;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:2;padding:0 10px}.tabs button{flex:1;border:0;border-bottom:2px solid transparent;background:transparent;border-radius:0;color:var(--muted);padding:13px 2px 11px;font-size:12px}.tabs button[aria-selected=true]{border-color:var(--accent);color:var(--accent)}.tabPage{padding:18px 19px 24px}.tabPage[hidden]{display:none}.section{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}.sectionTitle{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:9px}.finders{display:flex;gap:5px;flex-wrap:wrap;margin:11px 0}.finders button{font-size:10px;padding:5px 8px}.empty{border:1px dashed #53684c;border-radius:10px;text-align:center;padding:20px 15px;margin-top:13px}.empty svg{color:var(--accent);margin-bottom:8px}.empty p{margin-top:8px}.treeHeader{display:flex;align-items:start;justify-content:space-between;margin:14px 0 10px}.treeHeader .badge{font-size:10px;background:#2a4032;color:var(--accent);border-radius:5px;padding:3px 6px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.stat{border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#13221b}.stat span{font-size:10px;color:var(--muted)}.stat b{display:block;font-size:20px;font-weight:550;margin-top:2px;line-height:1.2}.stat small{font-size:11px;color:var(--muted);font-weight:400}.resource{margin-top:9px;font-size:11px}.bar{height:5px;border-radius:8px;background:#0d1913;margin-top:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);border-radius:8px}.cause{background:#22382b;border-left:2px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 12px;font-size:11px;line-height:1.6;margin-top:11px;color:#d0dbc6}.cause.warn{border-color:var(--warn);background:#342e22}.trait{padding:9px 0;border-bottom:1px solid #34473b80}.trait:last-child{border:0}.traitTop{display:flex;justify-content:space-between;align-items:center;font-size:11px}.alleles{display:inline-flex;gap:4px;align-items:center;font-variant-numeric:tabular-nums}.allele{background:#213e3b;color:#a6e4db;border:1px solid #3d6960;border-radius:4px;padding:1px 4px;font-size:10px;line-height:1.35;min-width:0}.allele.b{background:#372c40;border-color:#66516c;color:#dfc0e4}.allele.mutation{box-shadow:0 0 0 1px #f7c783}.allelePick{cursor:pointer}.allelePick:hover{filter:brightness(1.18)}.allelePick.activeTrace{outline:2px solid #f0ecc4;outline-offset:2px}.phenotype{font-size:10px;color:var(--muted);margin-top:4px}.offspring{margin-top:9px;display:flex;gap:6px;flex-wrap:wrap}.offspring button{font-size:11px}.mutant{color:var(--warn)}.mechanism{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:10px 0 4px}.mechanism div{padding:8px 2px;border:1px solid var(--line);text-align:center;font-size:10px;border-radius:6px}.mechanism span{display:block;color:var(--accent);font-size:15px}.chart{display:block;width:100%;height:170px;border:1px solid var(--line);border-radius:9px;background:#122019;margin-top:13px}.chartLegend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0;font-size:10px;color:var(--muted)}.chartLegend i{width:13px;height:2px;display:inline-block;background:var(--accent);vertical-align:middle;margin-right:5px}.chartLegend .recruits i{background:var(--cyan)}.chartLegend .baseline i{background:#8a9487}.cohortTable{width:100%;font-size:11px;border-collapse:collapse;margin-top:12px}.cohortTable th{text-align:right;font-size:10px;color:var(--muted);font-weight:500;max-width:90px}.cohortTable th:first-child{text-align:left}.cohortTable td{text-align:right;border-bottom:1px solid var(--line);padding:10px 0}.cohortTable td:first-child{text-align:left;color:var(--muted)}.shortColour{color:#8fbad8!important}.tallColour{color:#e6cc76!important}.note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.65}.labCanvas{height:230px;width:100%;display:block;background:#12221a;border:1px solid var(--line);border-radius:9px;margin-top:13px}.labResult{display:grid;grid-template-columns:1fr 1fr;text-align:center;gap:9px;margin-top:8px;font-size:11px}.labResult b{font-size:21px;font-weight:550;display:block;color:var(--accent)}.labResult small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.labExperiment{padding-top:2px}.labExperiment+.labExperiment{margin-top:19px;padding-top:17px;border-top:1px solid var(--line)}.labExperimentTag{font-size:10px;font-weight:650;letter-spacing:1.3px;text-transform:uppercase;color:var(--cyan);margin-bottom:4px}.genePairControls{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:11px}.genePairControls .row{font-size:11px}.labTrait{margin-top:10px}.labTrait .row{font-size:11px}.labTrait input{margin-top:4px}.labFoot{padding:10px 0;color:var(--muted);font-size:10px}.selectedActions{display:flex;gap:5px;margin-top:10px}.selectedActions button{flex:1}.lineageBox{margin-top:12px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:#122019}.lineageTop{display:flex;align-items:center;justify-content:space-between;gap:9px}.lineageCounts{font-size:10px;color:var(--muted);margin-top:7px}.lineageKey{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:var(--muted)}.lineageKey i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:-1px}.lineageKey .ancestor i{border:2px solid var(--cyan)}.lineageKey .descendant i{border:2px solid #e6cc76}.alleleTraceBox{margin-top:12px;padding:11px 12px;border:1px solid #5f7466;border-radius:8px;background:#10211b}.alleleTraceBox .traceTitle{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}.alleleTraceBox .traceValue{font-variant-numeric:tabular-nums;color:var(--accent)}.alleleTraceKey{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:var(--muted)}.alleleTraceKey i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:-1px}.alleleTraceKey .exact i{background:var(--cyan)}.alleleTraceKey .changed i{background:var(--warn)}.alleleTraceKey .source i{border:2px solid #f0ecc4}.traceLegend{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.traceLegend span{white-space:nowrap}.traceLegend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px}.traceLegend .exact i{background:var(--cyan)}.traceLegend .changed i{background:var(--warn)}.death{color:var(--warn);font-size:11px;margin-bottom:12px}.experimentBox{margin-top:10px;border:1px solid #526b50;border-radius:9px;background:#122019;padding:12px}.experimentGrid{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:0;margin-top:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden}.experimentGrid>div{padding:8px 9px;border-bottom:1px solid var(--line);font-size:11px}.experimentGrid>div:nth-child(3n+2),.experimentGrid>div:nth-child(3n+3){text-align:right}.experimentGrid>div:nth-last-child(-n+3){border-bottom:0}.experimentGrid .head{background:#1c3026;color:var(--muted);font-size:10px;font-weight:600}.experimentGrid b{font-weight:650}.experimentDelta{font-variant-numeric:tabular-nums}.experimentDelta.up{color:var(--accent)}.experimentDelta.down{color:var(--warn)}.experimentCallout{margin-top:10px;padding:10px 11px;border-left:2px solid var(--cyan);background:#17302c;border-radius:0 6px 6px 0;font-size:11px;line-height:1.55}.experimentActions{display:flex;gap:6px;align-items:center;margin-top:10px}.experimentActions button{flex:1}.experimentActions .mini{flex:0 0 auto}dialog{color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:650px;width:calc(100% - 28px);max-height:85dvh;padding:25px}dialog::backdrop{background:#041009bc;backdrop-filter:blur(3px)}dialog p{font-size:13px;color:#c3d0bd;line-height:1.65;margin-top:12px}dialog table{border-collapse:collapse;width:100%;margin-top:18px;font-size:12px}dialog td,dialog th{border-bottom:1px solid var(--line);text-align:left;padding:9px 5px;vertical-align:top}dialog th{color:var(--accent)}.srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(min-width:1600px){.app{grid-template-columns:minmax(0,1fr) 420px}.tabPage,.environment{padding-left:23px;padding-right:23px}}
+@media(max-width:980px){header{padding:0 16px;gap:9px}.brand .mini{display:none}.brand svg{width:28px}.app{grid-template-columns:minmax(0,1fr) 350px}.playback{gap:4px}.playback button{font-size:11px}h1{font-size:18px}.worldTop{left:16px;right:16px}.stageControls{left:16px}.worldBottom{left:16px;right:16px}.summary{gap:18px}.stageHint{left:16px}.environment,.tabPage{padding-left:15px;padding-right:15px}.livePill{max-width:120px;text-align:right}}
+@media(max-width:720px){header{height:auto;min-height:98px;padding:12px 14px;flex-wrap:wrap}.brand .mini{display:block;font-size:10px}.playback{width:100%;justify-content:space-between}.playback button{font-size:11px}.app{display:flex;flex-direction:column;height:auto}.stage{height:61dvh;min-height:430px}.worldTop{top:14px}.year{font-size:27px}.stageControls{top:89px}.worldBottom{bottom:60px}.summary{gap:24px}.summary b{font-size:18px}.insight{padding:9px 11px}.insight p{font-size:11px}.stageHint{font-size:9px;bottom:20px}.zoom{bottom:14px}aside{border-left:0;border-top:1px solid var(--line);overflow:visible}.environment{padding:16px 18px}.envSliders{gap:22px}.tabPage{padding:17px 20px 25px}.tabs{top:0}.labCanvas{height:255px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><svg width="36" height="41" viewBox="0 0 36 41" fill="none" aria-hidden="true"><path d="M18 38V17M18 27 6 20M18 20 28 12" stroke="currentColor" stroke-width="2"/><path d="M18 3c-7 1-8 7-8 7C0 12 0 25 10 28c3 6 14 6 17 0 12-3 10-16 2-18 0-5-6-9-11-7Z" stroke="currentColor" stroke-width="1.5"/></svg><div><h1>Forest</h1><div class="mini">Genes, growth &amp; the struggle for light.</div></div></div>
+  <div class="playback" aria-label="Simulation controls">
+    <button id="pauseBtn" class="primary" aria-label="Pause simulation">Pause</button>
+    <div class="speeds" aria-label="Simulation speed"><button class="speed" data-speed="1" aria-pressed="false">1×</button><button class="speed active" data-speed="4" aria-pressed="true">4×</button><button class="speed" data-speed="16" aria-pressed="false">16×</button></div>
+    <button id="stepBtn">+10 years</button><button id="helpBtn" class="quiet" aria-label="How this model works">How it works</button>
+  </div>
+</header>
+<main class="app">
+  <section class="stage" aria-label="Interactive isometric forest">
+    <canvas id="world" tabindex="0" aria-label="Forest. Click a tree to inspect it, drag to pan, scroll to zoom. The buttons in the tree panel also select trees."></canvas>
+    <div class="worldTop"><div><div class="eyebrow">An evolution sandbox</div><div class="year" id="yearLabel">Year 0</div><div class="season" id="seasonLabel">Spring · running at 4×</div></div><div class="livePill" id="generationLabel">Founder generation</div></div>
+    <div class="stageControls"><label class="srOnly" for="overlay">Colour trees by</label><select id="overlay"><option value="natural">Natural colours</option><option value="height">Height genes</option><option value="light">Light received</option><option value="water">Water available</option><option value="roots">Root genes</option><option value="wood">Wood genes</option><option value="generation">Generation</option></select><div id="overlayLegend" class="overlayLegend"></div></div>
+    <div class="worldBottom"><div class="summary"><div><b id="population">820</b><span>living trees</span></div><div><b id="meanLight">100%</b><span>mean light</span></div><div><b id="recruitCount">0</b><span>living descendants</span></div></div><div class="insight"><b id="insightTitle">Many beginnings. Different possibilities.</b><p id="insightText">Every sapling starts the same size. Its inherited traits and its neighbours will shape what happens next.</p></div></div>
+    <div class="stageHint">Click to inspect · drag to move · scroll to zoom</div>
+    <div class="zoom"><button id="zoomOut" aria-label="Zoom out">−</button><button id="fitBtn">Fit</button><button id="zoomIn" aria-label="Zoom in">+</button></div><div id="toast" class="toast" role="status"></div>
+  </section>
+  <aside aria-label="Forest experiments and observations">
+    <section class="environment">
+      <div class="row"><h3>Change the conditions</h3><label class="switch"><input type="checkbox" id="competition" checked> Competition</label></div>
+      <div class="presetRow"><button data-preset="woodland" class="active" aria-pressed="true">Wet woodland</button><button data-preset="drought" aria-pressed="false">Dry soil</button><button data-preset="wind" aria-pressed="false">Strong wind</button></div>
+      <div class="envSliders"><div><label class="row" for="rain"><span>Rainfall</span><output id="rainRead">94%</output></label><input id="rain" type="range" min="20" max="120" step="1" value="94"></div><div><label class="row" for="wind"><span>Wind exposure</span><output id="windRead">22%</output></label><input id="wind" type="range" min="0" max="100" value="22"></div></div>
+      <div class="mini" id="envNote">Changes act on this forest from now on.</div>
+      <details class="settings"><summary>Starting population &amp; inheritance settings</summary>
+        <div class="row"><label for="founders">Initial saplings (on restart)</label><output id="founderRead">820</output></div><input id="founders" type="range" min="100" max="1100" step="20" value="820">
+        <div class="row"><label for="mutation">Mutation chance per allele</label><output id="mutationRead">2.5%</output></div><input id="mutation" type="range" min="0" max="15" step=".5" value="2.5">
+        <div class="row"><label for="seed">Random seed</label><input id="seed" type="number" min="1" max="2147483647" value="42017"></div>
+        <div class="mini" style="margin-top:8px">A restart with the same seed and settings repeats the same forest. Mutations are random, never a response to what a tree needs.</div>
+        <div class="restartRow"><button id="resetBtn">Restart same forest</button><button id="newBtn">New random forest</button></div>
+      </details>
+    </section>
+    <nav class="tabs" role="tablist" aria-label="Observation panels"><button id="tab-tree" role="tab" aria-selected="true" aria-controls="page-tree" data-tab="tree">Inspect a tree</button><button id="tab-selection" role="tab" aria-selected="false" aria-controls="page-selection" data-tab="selection" tabindex="-1">Selection</button><button id="tab-lab" role="tab" aria-selected="false" aria-controls="page-lab" data-tab="lab" tabindex="-1">Gene lab</button></nav>
+    <section class="tabPage" id="page-tree" role="tabpanel" aria-labelledby="tab-tree">
+      <div class="row"><h2>From genes to a tree</h2><span class="eyebrow">01 — observe</span></div>
+      <div class="finders"><button data-find="canopy">Find canopy tree</button><button data-find="shade">Find shaded tree</button><button data-find="child">Find offspring</button></div>
+      <div id="treeDetails"></div>
+    </section>
+    <section class="tabPage" id="page-selection" role="tabpanel" aria-labelledby="tab-selection" hidden>
+      <div class="row"><h2>Who leaves descendants?</h2><span class="eyebrow">02 — follow</span></div>
+      <p class="note">An advantage matters when it helps inherited traits reach the next generation.</p>
+      <div class="mechanism"><div><span>1</span>Genes</div><div><span>2</span>Traits</div><div><span>3</span>Resources</div><div><span>4</span>Offspring</div></div>
+      <div class="section"><div class="sectionTitle"><h3>Inherited height potential</h3><b id="geneMean" style="color:var(--accent)">0.50</b></div>
+        <canvas id="chart" class="chart" role="img" aria-label="Mean inherited height potential through time"></canvas>
+        <div class="chartLegend"><span><i></i>Living trees</span><span class="recruits"><i></i>New seedlings, 5-year mean</span><span class="baseline"><i></i>Founders</span></div>
+        <p class="note">The yellow line can rise simply because shorter-potential trees die. The blue line follows genes actually inherited by new seedlings. Neither line is forced to rise.</p><div id="chartSummary" class="mini" style="margin-top:8px"></div>
+      </div>
+      <div class="section"><h3>Compare the original founders</h3><p class="mini" style="margin-top:5px">Lowest and highest thirds of inherited height potential. All started at the same age and size.</p><div id="cohort"></div><p class="note">Offspring per original founder includes parents that have died. A seedling counts for both parents. Other genes, location and chance also differ: this is an observation, not an isolated test of height.</p></div>
+      <div class="section"><div class="sectionTitle"><h3>Selection experiment</h3><span class="eyebrow">controlled comparison</span></div>
+        <p class="mini">Run two new forests from the same seed and settings for 60 years. They begin with the same founder genomes and locations; the only setting changed is whether trees compete for light and roots. Your live forest is not changed.</p>
+        <div class="experimentActions"><button id="experimentBtn" class="small primary">Run 60-year comparison</button><span class="mini" id="experimentSeed"></span></div>
+        <div id="experimentResult" class="experimentBox"><div class="mini">No comparison run yet. This isolates the effect of competition more cleanly than comparing unrelated forests.</div></div>
+      </div>
+      <div class="section"><h3>Watch the other inherited traits</h3><div id="traitMeans"></div><p class="note">Changing rainfall or wind changes the costs and benefits of these traits. These averages combine survival and inheritance; they describe the population, not genes changing within a tree.</p></div>
+      <div class="section"><div class="sectionTitle"><h3>A gap changes the contest</h3><button id="gapBtn" class="small">Open a canopy gap</button></div><p class="mini">Remove a small patch around your selected tree, or the tallest tree. Watch seedlings use the light. Natural deaths also open gaps.</p><div id="eventNote" class="note"></div></div>
+      <div class="section"><h3>Last year</h3><div id="yearReport" class="note"></div></div>
+    </section>
+    <section class="tabPage" id="page-lab" role="tabpanel" aria-labelledby="tab-lab" hidden>
+      <div class="row"><h2>Genes and environment</h2><span class="eyebrow">03 — test</span></div>
+      <p class="note">Two controlled experiments separate genetic differences from environmental ones. Both use the same growth model as the live forest.</p>
+
+      <div class="labExperiment">
+        <div class="labExperimentTag">Experiment A</div>
+        <h3>Same genes. Different light.</h3>
+        <p class="mini" style="margin-top:5px">Two copies of one genome, grown for 20 years. Only the amount of light reaching the right tree differs.</p>
+        <canvas id="labCanvas" class="labCanvas" role="img" aria-label="Two genetically identical trees grown in different light"></canvas>
+        <div class="labResult"><div>Full light<b id="labSunHeight"></b></div><div id="labShadeResult">Shade<b id="labShadeHeight"></b></div></div>
+        <p id="labConclusion" class="cause"></p>
+        <div class="section"><div class="row"><label for="labLight">Light reaching the right tree</label><output id="labLightRead">22%</output></div><input id="labLight" type="range" min="5" max="100" value="22"></div>
+      </div>
+
+      <div class="labExperiment">
+        <div class="labExperimentTag">Experiment B</div>
+        <h3>Same environment. Different height genes.</h3>
+        <p class="mini" style="margin-top:5px">These trees get identical light, water and soil and share every other trait. Only their two inherited height alleles differ.</p>
+        <canvas id="geneCanvas" class="labCanvas" role="img" aria-label="Two trees in the same environment with different inherited height genes"></canvas>
+        <div class="labResult"><div>Lower height genes<b id="geneLowHeight"></b><small id="geneLowPotential"></small></div><div>Higher height genes<b id="geneHighHeight"></b><small id="geneHighPotential"></small></div></div>
+        <p id="geneConclusion" class="cause"></p>
+        <div class="genePairControls">
+          <div><label class="row" for="geneLow"><span>Left height alleles</span><output id="geneLowRead">0.20 + 0.20</output></label><input id="geneLow" type="range" min="0" max="100" value="20"></div>
+          <div><label class="row" for="geneHigh"><span>Right height alleles</span><output id="geneHighRead">0.80 + 0.80</output></label><input id="geneHigh" type="range" min="0" max="100" value="80"></div>
+        </div>
+        <p class="mini" style="margin-top:9px">Both are age 20 in full light. Their growth, crown, roots and wood genes come from the shared genome below; only height potential is changed for this comparison.</p>
+      </div>
+
+      <div class="section"><div class="sectionTitle"><h3>The shared genome</h3><button id="useSelectedBtn" class="small" disabled>Use selected tree</button></div><div id="labSliders"></div><div class="labFoot" id="labGenomeSource">Each slider sets both alleles to the displayed value.</div></div>
+      <p class="mini">Controlled growth comparisons using the forest’s growth model. No reproduction, death or neighbouring roots. Dashed outlines show genetic height potential. These trees are separate from the live forest.</p>
+    </section>
+  </aside>
+</main>
+<dialog id="help"><div class="row"><h2>How this forest works</h2><button id="closeHelp" class="small">Close</button></div>
+  <p>Start with <b>Height genes</b> in the colour menu and press <b>+10 years</b> a few times. Inspect a canopy tree and a shaded tree. Then open <b>Selection</b> to see whose genes reach new seedlings.</p>
+  <p><b>Genotype</b> is the inherited allele pair for each trait. In this model, their mean sets the trait value. <b>Phenotype</b> is the tree that actually develops: its height, crown, trunk and roots depend on those genes, age and conditions.</p>
+  <table><thead><tr><th>More investment in…</th><th>Possible benefit</th><th>Cost in this model</th></tr></thead><tbody>
+  <tr><td>Height</td><td>A crown above neighbours gets more light.</td><td>Tall trees use more water and energy, and face more wind damage.</td></tr>
+  <tr><td>Growth</td><td>Reaches the canopy sooner.</td><td>More maintenance; shorter potential lifespan.</td></tr>
+  <tr><td>Crown</td><td>Collects more light and shades neighbours.</td><td>More water and maintenance.</td></tr>
+  <tr><td>Roots</td><td>Better water access.</td><td>More maintenance.</td></tr>
+  <tr><td>Wood</td><td>Resists wind; longer potential lifespan.</td><td>Slower, more costly construction.</td></tr>
+  </tbody></table>
+  <p>Each seed gets one randomly chosen allele from each parent for every trait. Small mutations can occur in either direction. Resource access affects growth, survival and seed production. Nearby adults supply pollen; isolated trees can self-fertilise. Only germinated seedlings count as established offspring.</p>
+  <p>The forest has overlapping generations. Death opens space; seeds can wait up to six years. Growth and reproduction are calculated once per model year, at spring; the seasons mark that cycle visually.</p>
+  <p><b>Try a comparison.</b> Open <b>Selection</b> and run the 60-year selection experiment: two forests begin from the same seed and settings, with competition as the changed condition. Or use <b>Gene lab</b> for two controlled comparisons: identical genes under different light, and different height genes under an identical environment. When you inspect a tree, <b>Trace lineage</b> highlights its pedigree. You can also click any allele value in the genotype panel to trace that specific copied allele through established descendants. Unchanged copies are separated from branches where a mutation altered the inherited value.</p>
+  <p class="mini">An illustrative model with five additive traits, stylised ecology and accelerated years. Real tree traits involve many genes and more complex inheritance. There is no target genome or guaranteed evolutionary winner.</p>
+</dialog>
+<script>
+(() => {
+'use strict';
+/* A teaching model, not a calibrated forecast of any particular forest.
+ * Five additive diploid traits. Ecology sets outcomes; mutations have no goal.
+ * This model has its own PRNG; drawing never changes simulation randomness. */
+const TRAITS = [
+  {key:'height', name:'Height potential', low:'short', high:'tall', colour:'#e6cc76'},
+  {key:'growth', name:'Growth pace', low:'slow', high:'fast', colour:'#c4a4e7'},
+  {key:'crown', name:'Crown spread', low:'narrow', high:'broad', colour:'#8ccfa9'},
+  {key:'roots', name:'Root investment', low:'shallow', high:'deep', colour:'#dca377'},
+  {key:'wood', name:'Wood investment', low:'light', high:'strong', colour:'#9fbed5'}
+];
+const GRID = 36;
+const clamp = (v,a=0,b=1) => Math.max(a,Math.min(b,v));
+const mean = a => a.length ? a.reduce((s,v)=>s+v,0)/a.length : null;
+const potential = t => 8 + 24*t.g.height;
+const crownRadius = t => .10 + (.78+1.4*t.g.crown)*clamp(t.height/5,.045,1);
+const rootRadius = t => (.9+1.55*t.g.roots)*(.3+.7*clamp(t.height/7));
+const lifeExpectancy = t => 57+65*t.g.wood-19*t.g.growth;
+function seededRandom(seed) {
+  let value = seed >>> 0;
+  return () => {value += 0x6D2B79F5; let v=value; v=Math.imul(v^(v>>>15),v|1); v^=v+Math.imul(v^(v>>>7),v|61); return ((v^(v>>>14))>>>0)/4294967296;};
+}
+function normal(rng) { return Math.sqrt(-2*Math.log(Math.max(1e-12,rng())))*Math.cos(2*Math.PI*rng()); }
+function expression(dna) { return Object.fromEntries(TRAITS.map(t=>[t.key,(dna[t.key][0]+dna[t.key][1])/2])); }
+function fixedDNA(value=.5) {return Object.fromEntries(TRAITS.map(t=>[t.key,[value,value]]));}
+function founderDNA(rng) {
+  return Object.fromEntries(TRAITS.map(t=>{const centre=.12+.76*rng();return [t.key,[clamp(centre+normal(rng)*.10),clamp(centre+normal(rng)*.10)]];}));
+}
+function inherit(a,b,rng,rate) {
+  const dna={}, origins={}, mutations=[];
+  for(const {key} of TRAITS) {
+    dna[key]=[];origins[key]=[];
+    for(let p=0;p<2;p++) {
+      const parent=p?b:a, allele=rng()<.5?0:1, original=parent.dna[key][allele];
+      let value=original;
+      if(rng()<rate) value=clamp(original+normal(rng)*.085);
+      if(value!==original) mutations.push({key,slot:p,from:original,to:value});
+      origins[key].push({id:parent.id,allele,value:original});dna[key].push(value);
+    }
+  }
+  return {dna,origins,mutations};
+}
+// All growth comparisons and forest trees use this same physiology function.
+function grow(t,fertility=1) {
+  const leafArea=.83+.37*t.g.crown;
+  const income=.94*Math.pow(t.light,.83)*(.22+.78*t.water)*fertility*leafArea;
+  const upkeep=.105+t.height*.0065+t.g.crown*.065+t.g.growth*.04+t.g.roots*.055+t.g.wood*.045;
+  t.net=income-upkeep;
+  t.energy=clamp(t.energy+t.net,0,2.3);
+  const room=Math.pow(clamp(1-t.height/potential(t)),.6);
+  const pace=(.80+1.9*t.g.growth)/(.8+.6*t.g.wood);
+  const growth=pace*room*Math.pow(t.light,.72)*(.25+.75*t.water)*clamp(t.energy,0,1.2);
+  const cost=.08+.08*t.g.wood;
+  t.lastGrowth=Math.max(0,Math.min(potential(t)-t.height,growth,t.energy/(cost+.15)));
+  t.height+=t.lastGrowth;t.energy=Math.max(0,t.energy-t.lastGrowth*cost);
+  t.stress=clamp(t.stress*.68+Math.max(0,.30-t.light)*1.55+(t.energy<.10?.24:0),0,1.5);
+}
+class Forest {
+  constructor({seed=42017,founders=820,mutation=.025,rain=.94,wind=.22,competition=true}={}) {
+    this.seed=seed;this.rng=seededRandom(seed);this.founderCount=founders;this.mutation=mutation;
+    this.env={rain,wind,competition};this.year=0;this.nextId=1;this.trees=[];this.archive=new Map();
+    this.seeds=[];this.logs=[];this.history=[];this.events=[];this.births=[];this.deaths={};
+    this.cells=Array.from({length:GRID*GRID},(_,i)=>({fertility:clamp(.87+.075*Math.sin((i%GRID)*.45)+.045*(this.rng()-.5),.7,1), moisture:clamp(.85+.1*Math.cos(Math.floor(i/GRID)*.35)+.08*(this.rng()-.5),.65,1)}));
+    this.index=new Array(GRID*GRID);
+    const places=[];for(let y=1;y<GRID-1;y++)for(let x=1;x<GRID-1;x++)places.push([x,y]);
+    for(let i=places.length-1;i>0;i--){const j=Math.floor(this.rng()*(i+1));[places[i],places[j]]=[places[j],places[i]];}
+    for(const [x,y] of places.slice(0,founders)) this.addTree(x,y,founderDNA(this.rng));
+    const ranked=this.trees.map(t=>t.g.height).sort((a,b)=>a-b);
+    this.cuts=[ranked[Math.floor(ranked.length/3)]??.35,ranked[Math.floor(2*ranked.length/3)]??.65];
+    for(const t of this.trees)t.band=t.g.height<this.cuts[0]?'short':t.g.height>this.cuts[1]?'tall':'middle';
+    this.founders=this.trees.slice();this.baseline=mean(this.trees.map(t=>t.g.height));
+    this.refreshResources();this.record();
+  }
+  addTree(x,y,dna,seed=null) {
+    const t={id:this.nextId++,x,y,dna,g:expression(dna),height:.35,age:0,energy:.9,stress:0,
+      light:1,water:1,net:0,lastGrowth:0,alive:true,born:this.year,generation:seed?seed.generation:0,
+      parents:seed?seed.parents.slice():[],origins:seed?seed.origins:null,mutations:seed?seed.mutations:[],
+      offspring:0,seeds:0,deathYear:null,deathCause:null};
+    this.trees.push(t);this.archive.set(t.id,t);this.index[y*GRID+x]=t;return t;
+  }
+  rebuildIndex(){this.index.fill(null);for(const t of this.trees)this.index[t.y*GRID+t.x]=t;}
+  neighbours(t,range=5) {
+    const near=[];
+    for(let y=Math.max(0,t.y-range);y<=Math.min(GRID-1,t.y+range);y++)
+      for(let x=Math.max(0,t.x-range);x<=Math.min(GRID-1,t.x+range);x++){
+        const o=this.index[y*GRID+x];if(o&&o!==t)near.push(o);
+      }
+    return near;
+  }
+  resources(t,details=false) {
+    let depth=0,crowding=0;const blockers=[];const tr=crownRadius(t),rr=rootRadius(t);
+    if(this.env.competition)for(const o of this.neighbours(t)) {
+      const d=Math.hypot(o.x-t.x,o.y-t.y),reach=crownRadius(o)+tr*.5;
+      if(d<reach) {
+        const dh=o.height-t.height;
+        const dominance=dh<0?.018+.13*Math.exp(dh/1.3):.22+.78*clamp(dh/3.5);
+        const amount=(1-d/reach)*dominance*(.48+.8*o.g.crown)*1.8;
+        depth+=amount;if(details&&amount>.008)blockers.push({tree:o,amount});
+      }
+      const rootReach=rootRadius(o)+rr*.45;
+      if(d<rootReach)crowding+=(1-d/rootReach)*(.65+.5*o.g.roots)*(.35+.65*clamp(o.height/8));
+    }
+    const demand=.71+.25*t.g.crown+.012*t.height;
+    const water=clamp(this.env.rain*this.cells[t.y*GRID+t.x].moisture*(.76+.72*t.g.roots)/(demand*(.74+.16*crowding)),.025,1);
+    return {light:clamp(Math.exp(-depth),.025,1),water,blockers:blockers.sort((a,b)=>b.amount-a.amount),crowding};
+  }
+  refreshResources(){this.rebuildIndex();for(const t of this.trees){const r=this.resources(t);t.light=r.light;t.water=r.water;}}
+  kill(t,cause) {
+    if(!t.alive)return;
+    t.alive=false;t.deathYear=this.year;t.deathCause=cause;this.index[t.y*GRID+t.x]=null;
+    this.deaths[cause]=(this.deaths[cause]||0)+1;
+    if(t.height>5)this.logs.push({x:t.x,y:t.y,height:t.height,angle:this.rng()*Math.PI*2,year:this.year});
+  }
+  mate(t,adults) {
+    const choices=adults.filter(o=>o!==t&&Math.hypot(t.x-o.x,t.y-o.y)<8);
+    if(!choices.length)return t; // Explicit self-fertilisation when isolated.
+    let sum=0;for(const o of choices)sum+=.04+o.light*o.water*clamp(o.energy);
+    let pick=this.rng()*sum;for(const o of choices){pick-=.04+o.light*o.water*clamp(o.energy);if(pick<=0)return o;}
+    return choices[choices.length-1];
+  }
+  reproduce() {
+    const adults=this.trees.filter(t=>t.age>=7&&t.height>=5&&t.energy>.3);
+    for(const t of adults) {
+      const fecundity=(.35+2.5*Math.max(0,t.net+.06))*Math.pow(t.light,.72)*t.water*clamp(t.energy,0,1.3);
+      const count=Math.min(4,Math.floor(fecundity)+(this.rng()<fecundity%1?1:0));
+      if(!count)continue;
+      const mate=this.mate(t,adults);
+      for(let i=0;i<count;i++) {
+        t.energy=Math.max(0,t.energy-.065);
+        const angle=this.rng()*Math.PI*2,dist=.8+Math.sqrt(this.rng())*(3.2+t.height*.09);
+        const x=Math.round(t.x+Math.cos(angle)*dist),y=Math.round(t.y+Math.sin(angle)*dist);
+        t.seeds++;if(mate!==t)mate.seeds++;
+        if(x<1||y<1||x>=GRID-1||y>=GRID-1)continue;
+        const inheritance=inherit(t,mate,this.rng,this.mutation);
+        this.seeds.push({x,y,...inheritance,parents:[t.id,mate.id],generation:1+Math.max(t.generation,mate.generation),age:0,dormancy:Math.floor(this.rng()*2)});
+      }
+    }
+  }
+  germinate() {
+    const remaining=[];
+    // Shuffle so access to a new gap does not favour the same parent order.
+    for(let i=this.seeds.length-1;i>0;i--){const j=Math.floor(this.rng()*(i+1));[this.seeds[i],this.seeds[j]]=[this.seeds[j],this.seeds[i]];}
+    for(const s of this.seeds) {
+      s.age++;
+      if(s.age>6||this.rng()<.14)continue;
+      if(s.dormancy>0){s.dormancy--;remaining.push(s);continue;}
+      if(!this.index[s.y*GRID+s.x]) {
+        const r=this.resources({x:s.x,y:s.y,height:.35,g:expression(s.dna)});
+        const chance=.05+.42*Math.sqrt(r.light)*r.water*this.cells[s.y*GRID+s.x].fertility;
+        if(this.rng()<chance) {
+          const child=this.addTree(s.x,s.y,s.dna,s);this.births.push(child);
+          for(const id of new Set(child.parents))this.archive.get(id).offspring++;
+          continue;
+        }
+      }
+      remaining.push(s);
+    }
+    this.seeds=remaining;
+  }
+  step() {
+    this.year++;this.births=[];this.deaths={};this.refreshResources();
+    // Snapshot resource access before any tree grows or dies: no iteration advantage.
+    const dying=[];
+    for(const t of this.trees) {
+      t.age++;grow(t,this.cells[t.y*GRID+t.x].fertility);
+      const rates=[
+        ['shade / energy shortage',.065*t.stress],
+        ['drought',Math.max(0,.34-t.water)*.24],
+        ['wind damage',this.env.wind**2*(t.height/22)**2*(.009+.075*(1-t.g.wood)**2)],
+        ['old age',t.age>lifeExpectancy(t)?.04+(t.age-lifeExpectancy(t))*.014:0],
+        ['background mortality',.0015]
+      ];
+      let pick=this.rng();for(const [cause,rate] of rates){if(pick<rate){dying.push([t,cause]);break;}pick-=rate;}
+    }
+    for(const [t,cause] of dying)this.kill(t,cause);
+    this.trees=this.trees.filter(t=>t.alive);
+    this.rebuildIndex();this.reproduce();this.germinate();
+    this.logs=this.logs.filter(l=>this.year-l.year<22);
+    this.refreshResources();this.record();
+  }
+  livingChildren(id){return this.trees.filter(t=>t.parents.includes(id));}
+  cohort(band) {
+    const founders=this.founders.filter(t=>t.band===band),alive=founders.filter(t=>t.alive),ids=new Set(founders.map(t=>t.id));
+    let descendants=0;for(const t of this.trees)for(const p of new Set(t.parents))if(ids.has(p))descendants++;
+    return {n:founders.length,living:alive.length,survival:founders.length?alive.length/founders.length:0,
+      light:mean(alive.map(t=>t.light)),height:mean(alive.map(t=>t.height)),children:founders.length?descendants/founders.length:0};
+  }
+  record() {
+    this.stats={living:this.trees.length,seeds:this.seeds.length,height:mean(this.trees.map(t=>t.height)),
+      gene:mean(this.trees.map(t=>t.g.height)),light:mean(this.trees.map(t=>t.light)),water:mean(this.trees.map(t=>t.water)),
+      generation:Math.max(0,...this.trees.map(t=>t.generation)),recruits:this.trees.filter(t=>t.generation>0).length,
+      births:this.births.length,deaths:Object.values(this.deaths).reduce((a,b)=>a+b,0)};
+    this.history.push({year:this.year,gene:this.stats.gene,birthGene:mean(this.births.map(t=>t.g.height)),births:this.births.length,pop:this.trees.length});
+  }
+  gap(id=null) {
+    const centre=this.archive.get(id)||this.trees.reduce((a,t)=>!a||t.height>a.height?t:a,null);
+    if(!centre)return 0;
+    let count=0;for(const t of this.trees)if(Math.hypot(t.x-centre.x,t.y-centre.y)<2.3&&t.height>3){this.kill(t,'cleared by you');count++;}
+    this.trees=this.trees.filter(t=>t.alive);this.refreshResources();
+    this.events.push({year:this.year,text:`Canopy gap: ${count} trees cleared`});
+    this.history.pop();this.record();return count;
+  }
+}
+function growClone(dna,light=1,years=20) {
+  const t={dna,g:expression(dna),height:.35,age:0,energy:.9,stress:0,light,water:.85,lastGrowth:0};
+  for(let i=0;i<years;i++){t.age++;grow(t,.9);}return t;
+}
+function cloneTrial(dna,shade=.22,years=20) {
+  return [growClone(dna,1,years),growClone(dna,shade,years)];
+}
+
+const $=id=>document.getElementById(id);
+const world=$('world'),ctx=world.getContext('2d');
+const seasons=['Spring','Summer','Autumn','Winter'];
+const TW=32,TH=16,HP=5.1;
+let forest,selectedId=null,paused=false,speed=4,season=0,seasonTime=0,lastFrame=0,lastDraw=0;
+let activeTab='tree',overlay='natural',cw=0,ch=0,dpr=1,camera={x:0,y:0,z:1},fitScale=1;
+let hits=[],toastTimer,drag=null,worldDirty=true,terrain=document.createElement('canvas');
+let lineageVisible=false,lineageCache=null;
+let alleleTrace=null,alleleTraceCache=null;
+let labDNA=fixedDNA(),labSource='Each slider sets both alleles to the displayed value.';
+const fmt=(v,n=1)=>v==null?'—':v.toFixed(n);
+const pct=v=>v==null?'—':Math.round(v*100)+'%';
+const treeAt=()=>forest.archive.get(selectedId);
+function toast(message){clearTimeout(toastTimer);$('toast').textContent=message;$('toast').style.opacity=1;toastTimer=setTimeout(()=>$('toast').style.opacity=0,2700);}
+function showTab(tab){
+  activeTab=tab;
+  document.querySelectorAll('[data-tab]').forEach(b=>{const on=b.dataset.tab===tab;b.setAttribute('aria-selected',on);b.tabIndex=on?0:-1;});
+  ['tree','selection','lab'].forEach(k=>$('page-'+k).hidden=k!==tab);
+  if(tab==='selection')drawChart();if(tab==='lab')renderLab();
+}
+function startForest(newSeed=false){
+  let seed=Math.round(Number($('seed').value));if(!Number.isFinite(seed)||seed<1||seed>2147483647)seed=42017;
+  if(newSeed){const a=new Uint32Array(1);crypto.getRandomValues(a);seed=1+a[0]%2147483646;}
+  $('seed').value=seed;
+  forest=new Forest({seed,founders:Number($('founders').value),mutation:Number($('mutation').value)/100,
+    rain:Number($('rain').value)/100,wind:Number($('wind').value)/100,competition:$('competition').checked});
+  selectedId=null;lineageVisible=false;lineageCache=null;alleleTrace=null;alleleTraceCache=null;season=0;seasonTime=0;lastFrame=0;
+  rebuildTerrain();fitCamera();updateUI();worldDirty=true;
+}
+function setPaused(value){paused=value;$('pauseBtn').textContent=paused?'Play':'Pause';$('pauseBtn').setAttribute('aria-label',paused?'Resume simulation':'Pause simulation');updateSeasonLabel();}
+function updateSeasonLabel(){$('seasonLabel').textContent=`${seasons[season]} · ${paused?'paused':`running at ${speed}×`}`;}
+function changeEnvironment(preset=null){
+  forest.env.rain=Number($('rain').value)/100;forest.env.wind=Number($('wind').value)/100;forest.env.competition=$('competition').checked;
+  $('rainRead').textContent=pct(forest.env.rain);$('windRead').textContent=pct(forest.env.wind);
+  document.querySelectorAll('[data-preset]').forEach(b=>{const on=b.dataset.preset===preset;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on);});
+  $('envNote').textContent=forest.env.competition?'Changes act on this forest from now on.':'Light and root competition off. Space is still limited.';
+  forest.refreshResources();forest.history.pop();forest.record();updateUI();worldDirty=true;
+}
+function advance(years=1){for(let i=0;i<years;i++)forest.step();updateUI();worldDirty=true;}
+function updateUI(){
+  if(alleleTrace)alleleTraceCache=computeAlleleTrace(alleleTrace.sourceId,alleleTrace.key,alleleTrace.slot);
+  const s=forest.stats;
+  $('yearLabel').textContent='Year '+forest.year;$('population').textContent=s.living.toLocaleString();
+  $('meanLight').textContent=pct(s.light);$('recruitCount').textContent=s.recruits.toLocaleString();
+  $('generationLabel').textContent=s.generation?`Up to generation ${s.generation}`:'Founder generation';
+  $('generationLabel').title='Generation = one more than the higher of the two parental generations. Generations overlap.';
+  updateSeasonLabel();updateInsight();renderInspector();renderSelection();updateLegend();
+  $('gapBtn').disabled=!forest.trees.some(t=>t.height>3);
+}
+function updateInsight(){
+  const s=forest.stats;let title,text;
+  if(!s.living){title='This forest has died out.';text=forest.seeds.length?'Dormant seeds remain. A change in conditions may allow them to germinate.':'No living trees or viable seeds remain. Restart to try different conditions.';}
+  else if(!forest.env.competition){title='Take away the shade advantage.';text='Every tree receives full light. Taller bodies still cost more water and energy. Watch whether high height-potential genes continue to spread.';}
+  else if(forest.year<4){title='Same starting size. Different possibilities.';text=`${forest.founders.length} saplings started at 0.35 m. Switch to Height genes to see inherited differences before they become visible in growth.`;}
+  else if(forest.env.rain<.55){title='An advantage depends on the environment.';text=`Mean water availability is ${pct(s.water)}. Greater root investment helps water access, but roots also cost energy. Inspect the trees that cope best.`;}
+  else if(forest.env.wind>.7){title='Height comes with a risk.';text='Tall, lightly built trees face greater wind damage. Strong wood offers protection, but takes more energy and time to build.';}
+  else if(forest.year<16){title='The canopy closes. Light becomes unequal.';text=`Mean light is now ${pct(s.light)}. Crowns above their neighbours intercept more sunlight. Suppressed trees grow slowly and make fewer seeds.`;}
+  else {title='Follow the genes into new trees.';text=`${s.recruits} living trees grew from seeds in this forest. Open Selection to compare survival, offspring and inherited traits across generations.`;}
+  $('insightTitle').textContent=title;$('insightText').textContent=text;
+}
+function updateLegend(){
+  const e=$('overlayLegend');
+  if(alleleTrace){e.innerHTML='<div class="traceLegend"><span class="exact"><i></i>unchanged copy</span><span class="changed"><i></i>mutated branch</span></div>';return;}
+  if(overlay==='natural'){e.innerHTML='';return;}
+  let labels='low → high',gradient='linear-gradient(90deg,#78adcf,#edca73)';
+  if(overlay==='light'){labels='shade → sunlight';gradient='linear-gradient(90deg,#a674a8,#f5d787)';}
+  if(overlay==='water'){labels='dry → well supplied';gradient='linear-gradient(90deg,#c79771,#83d2cf)';}
+  if(overlay==='generation'){labels='founder → descendant';gradient='linear-gradient(90deg,#95b48a,#af9bdf)';}
+  e.innerHTML=`<div class="legendGradient" style="background:${gradient}"></div>${labels}`;
+}
+function computeLineage(id){
+  const ancestors=new Map(),descendants=new Map(),children=new Map();
+  for(const node of forest.archive.values())for(const pid of new Set(node.parents)){
+    if(!children.has(pid))children.set(pid,[]);children.get(pid).push(node.id);
+  }
+  const visitAnc=(nodeId,depth)=>{
+    const node=forest.archive.get(nodeId);if(!node)return;
+    for(const pid of new Set(node.parents)){
+      if(pid===id)continue;
+      const prev=ancestors.get(pid);
+      if(prev==null||depth<prev){ancestors.set(pid,depth);visitAnc(pid,depth+1);}
+    }
+  };
+  visitAnc(id,1);
+  const queue=[[id,0]];
+  while(queue.length){
+    const [nodeId,depth]=queue.shift();
+    for(const childId of children.get(nodeId)||[]){
+      if(childId===id)continue;
+      const next=depth+1,prev=descendants.get(childId);
+      if(prev==null||next<prev){descendants.set(childId,next);queue.push([childId,next]);}
+    }
+  }
+  return {id,ancestors,descendants};
+}
+function lineageKind(id){
+  if(!lineageVisible||!lineageCache)return null;
+  if(id===selectedId)return 'selected';
+  if(lineageCache.ancestors.has(id))return 'ancestor';
+  if(lineageCache.descendants.has(id))return 'descendant';
+  return null;
+}
+function lineageCounts(lineage){
+  const countLiving=m=>[...m.keys()].reduce((n,id)=>n+(forest.archive.get(id)?.alive?1:0),0);
+  return {ancestors:lineage.ancestors.size,livingAncestors:countLiving(lineage.ancestors),descendants:lineage.descendants.size,livingDescendants:countLiving(lineage.descendants)};
+}
+function alleleCopyKey(id,slot){return `${id}:${slot}`;}
+function computeAlleleTrace(sourceId,key,sourceSlot){
+  const source=forest.archive.get(sourceId);
+  if(!source||!source.dna[key])return null;
+  const states=new Map(),byTree=new Map(),edges=[],mutations=[];
+  states.set(alleleCopyKey(sourceId,sourceSlot),{treeId:sourceId,slot:sourceSlot,status:'exact',depth:0,value:source.dna[key][sourceSlot]});
+  const nodes=[...forest.archive.values()].sort((a,b)=>a.born-b.born||a.id-b.id);
+  for(const node of nodes){
+    const origins=node.origins?.[key];if(!origins)continue;
+    for(let slot=0;slot<origins.length;slot++){
+      const origin=origins[slot];if(!origin)continue;
+      const parentState=states.get(alleleCopyKey(origin.id,origin.allele));if(!parentState)continue;
+      const mutation=node.mutations.find(m=>m.key===key&&m.slot===slot);
+      const status=parentState.status==='exact'&&!mutation?'exact':'changed';
+      const state={treeId:node.id,slot,status,depth:parentState.depth+1,value:node.dna[key][slot],parentId:origin.id,parentSlot:origin.allele,mutation:mutation||null};
+      states.set(alleleCopyKey(node.id,slot),state);
+      edges.push({parentId:origin.id,parentSlot:origin.allele,childId:node.id,childSlot:slot,status,mutation:mutation||null});
+      if(mutation)mutations.push({treeId:node.id,slot,from:mutation.from,to:mutation.to,depth:state.depth});
+    }
+  }
+  for(const state of states.values()){if(!byTree.has(state.treeId))byTree.set(state.treeId,[]);byTree.get(state.treeId).push(state);}
+  let exactTrees=0,exactLiving=0,changedTrees=0,changedLiving=0,exactCopies=0,changedCopies=0;
+  for(const [id,list] of byTree){
+    if(id===sourceId)continue;
+    const hasExact=list.some(x=>x.status==='exact'),hasChanged=list.some(x=>x.status==='changed'),alive=!!forest.archive.get(id)?.alive;
+    if(hasExact){exactTrees++;if(alive)exactLiving++;}
+    if(hasChanged){changedTrees++;if(alive)changedLiving++;}
+    exactCopies+=list.filter(x=>x.status==='exact').length;changedCopies+=list.filter(x=>x.status==='changed').length;
+  }
+  let exactSeedCopies=0,changedSeedCopies=0;
+  for(const seed of forest.seeds){
+    const origins=seed.origins?.[key];if(!origins)continue;
+    for(let slot=0;slot<origins.length;slot++){
+      const origin=origins[slot],parentState=origin&&states.get(alleleCopyKey(origin.id,origin.allele));if(!parentState)continue;
+      const mutation=seed.mutations.find(m=>m.key===key&&m.slot===slot);
+      if(parentState.status==='exact'&&!mutation)exactSeedCopies++;else changedSeedCopies++;
+    }
+  }
+  const mixedTrees=[...byTree].filter(([id,list])=>id!==sourceId&&list.some(x=>x.status==='exact')&&list.some(x=>x.status==='changed')).length;
+  return {sourceId,key,sourceSlot,sourceValue:source.dna[key][sourceSlot],states,byTree,edges,mutations,exactTrees,exactLiving,changedTrees,changedLiving,mixedTrees,exactCopies,changedCopies,exactSeedCopies,changedSeedCopies};
+}
+function alleleTraceTreeKind(id){
+  if(!alleleTrace||!alleleTraceCache)return null;
+  if(id===alleleTrace.sourceId)return 'source';
+  const states=alleleTraceCache.byTree.get(id);if(!states)return null;
+  const exact=states.some(s=>s.status==='exact'),changed=states.some(s=>s.status==='changed');
+  return exact&&changed?'mixed':exact?'exact':'changed';
+}
+function alleleTraceOriginText(trace){
+  const source=forest.archive.get(trace.sourceId);if(!source)return '';
+  const mutation=source.mutations.find(m=>m.key===trace.key&&m.slot===trace.sourceSlot);
+  const origin=source.origins?.[trace.key]?.[trace.sourceSlot];
+  if(!origin)return 'Founder allele: this copy was present when the forest began.';
+  const parentCopy=`parent #${origin.id}, allele ${origin.allele+1}`;
+  if(mutation)return `This copy arose by mutation when inherited from ${parentCopy}: ${mutation.from.toFixed(3)} → ${mutation.to.toFixed(3)}.`;
+  return `Inherited unchanged from ${parentCopy}.`;
+}
+function alleleTraceSummaryHTML(){
+  if(!alleleTrace||!alleleTraceCache)return '';
+  const tr=alleleTraceCache,trait=TRAITS.find(t=>t.key===tr.key),source=forest.archive.get(tr.sourceId);
+  const seedText=tr.exactSeedCopies||tr.changedSeedCopies?` · dormant seeds: ${tr.exactSeedCopies} exact, ${tr.changedSeedCopies} changed`:'';
+  const overlapText=tr.mixedTrees?` ${tr.mixedTrees} descendant${tr.mixedTrees===1?' carries':'s carry'} both an unchanged and a mutation-derived copy.`:'';
+  return `<div class="alleleTraceBox"><div class="traceTitle"><div><b>Tracing one allele copy</b><div class="mini">${trait?.name||tr.key} · tree #${tr.sourceId}, allele ${tr.sourceSlot+1} · <span class="traceValue">${tr.sourceValue.toFixed(3)}</span>${source?.alive?'':' · source tree died'}</div></div><button id="alleleTraceClear" class="small">Stop tracing</button></div>
+    <div class="lineageCounts">${tr.exactTrees} established descendant${tr.exactTrees===1?'':'s'} carry an unchanged copy (${tr.exactLiving} living) · ${tr.changedTrees} descendant${tr.changedTrees===1?'':'s'} carry a mutation-derived copy (${tr.changedLiving} living)${seedText}.${overlapText}</div>
+    <div class="alleleTraceKey"><span class="source"><i></i>source copy</span><span class="exact"><i></i>unchanged copies</span><span class="changed"><i></i>mutation-derived branch</span></div>
+    <p class="mini" style="margin-top:7px">${alleleTraceOriginText(tr)} Trace identity comes from recorded parent and allele-copy provenance, not from matching numeric values. Once a mutation changes the copied value, that branch remains marked as derived rather than being counted as the exact allele.</p></div>`;
+}
+function chooseTree(id,focus=false){
+  selectedId=id;if(lineageVisible)lineageCache=computeLineage(id);const t=treeAt();renderInspector();$('useSelectedBtn').disabled=!t;
+  if(focus&&t){camera.z=Math.max(camera.z,Math.min(1.35,fitScale*1.75));const p=project(t.x,t.y);camera.x=cw*.5-p.x*camera.z;camera.y=(ch-145)*.5-(p.y-t.height*HP*.5)*camera.z;}
+  worldDirty=true;
+}
+function selectAndShow(id,focus=true){chooseTree(id,focus);showTab('tree');}
+function resourceRow(name,v,colour){return `<div class="resource"><div class="row"><span>${name}</span><b>${pct(v)}</b></div><div class="bar"><i style="width:${clamp(v)*100}%;background:${colour}"></i></div></div>`;}
+function traitEffect(t,key){
+  const g=t.g;
+  if(key==='height')return `${potential(t).toFixed(1)} m genetic ceiling · ${t.height.toFixed(1)} m realised`;
+  if(key==='growth')return `${g.growth>.66?'Fast':g.growth<.34?'Slow':'Moderate'} growth pace · +${t.lastGrowth.toFixed(2)} m in its last year`;
+  if(key==='crown')return `${(2*crownRadius(t)).toFixed(1)} m current crown diameter · broad crowns also need more water`;
+  if(key==='roots')return `${(2*rootRadius(t)).toFixed(1)} m current root spread · more investment improves water access`;
+  return `${g.wood>.66?'Strong':g.wood<.34?'Light':'Moderate'} wood · ${Math.round(lifeExpectancy(t))}-year ageing threshold`;
+}
+function renderInspector(){
+  const d=$('treeDetails'),t=treeAt();$('useSelectedBtn').disabled=!t;
+  if(!t){d.innerHTML=`<div class="empty"><svg width="42" height="47" viewBox="0 0 36 41" fill="none" aria-hidden="true"><path d="M18 38V17M18 27 6 20M18 20 28 12" stroke="currentColor" stroke-width="1.5"/><path d="M18 3c-7 1-8 7-8 7C0 12 0 25 10 28c3 6 14 6 17 0 12-3 10-16 2-18 0-5-6-9-11-7Z" stroke="currentColor"/></svg><h3>Choose a tree in the forest</h3><p class="mini">See the alleles it inherited, the body it grew, the light it receives and the offspring it leaves.</p></div><div class="section"><h3>Look for a difference</h3><p class="note">Try <b>+10 years</b>, then use the canopy and shaded-tree buttons. Height potential is inherited; the height a tree actually reaches also depends on its environment.</p></div>`;return;}
+  const living=forest.livingChildren(t.id),r=t.alive?forest.resources(t,true):null;
+  const lineage=lineageVisible&&lineageCache?.id===t.id?lineageCache:computeLineage(t.id),lc=lineageCounts(lineage);
+  const blocker=r?.blockers[0]?.tree;
+  let reason;
+  if(!t.alive)reason=`This tree died in year ${t.deathYear}: ${t.deathCause}. Its alleles can persist in its descendants.`;
+  else if(t.age===0)reason='A new sapling. Its genome is already set; its adult form is still to develop.';
+  else if(t.light<.3)reason=`Only ${pct(t.light)} of full light reaches this crown. Low light limits energy, growth and seed production${blocker?`; tree #${blocker.id} contributes the most shade`:''}.`;
+  else if(t.water<.45)reason=`Water is limiting: ${pct(t.water)} of demand is met. Root investment helps, while a larger body increases demand.`;
+  else if(forest.env.wind>.7&&t.height>14&&t.g.wood<.45)reason='This tall, lightly built tree has good reach but is exposed to wind damage.';
+  else if(t.height>potential(t)*.9)reason='Near its inherited height ceiling. Extra resources can support survival and reproduction, but do not rewrite its genes.';
+  else reason=`This tree receives ${pct(t.light)} of full light. With available water and energy, it can keep growing towards its genetic height ceiling.`;
+  const rows=TRAITS.map(({key,name,colour})=>{
+    const alleles=t.dna[key].map((v,i)=>{
+      const m=t.mutations.find(m=>m.key===key&&m.slot===i),o=t.origins?.[key][i];
+      const label=o?`From ${i?'pollen':'seed'} parent #${o.id}, allele ${o.allele+1}${m?`; mutation ${m.from.toFixed(3)} to ${m.to.toFixed(3)}`:''}`:'Starting allele '+(i+1);
+      const active=alleleTrace&&alleleTrace.sourceId===t.id&&alleleTrace.key===key&&alleleTrace.slot===i;
+      return `<button class="allele allelePick ${i?'b':''} ${m?'mutation':''} ${active?'activeTrace':''}" data-allele-tree="${t.id}" data-allele-trait="${key}" data-allele-slot="${i}" aria-pressed="${active}" title="${label}. Click to trace this allele copy through descendants.">${v.toFixed(2)}${m?'*':''}</button>`;
+    }).join('<span class="muted">+</span>');
+    return `<div class="trait"><div class="traitTop"><b>${name}</b><span class="alleles">${alleles}<span class="muted">→</span><b>${t.g[key].toFixed(2)}</b></span></div><div class="bar"><i style="width:${t.g[key]*100}%;background:${colour}"></i></div><div class="phenotype">${traitEffect(t,key)}</div></div>`;
+  }).join('');
+  const parents=t.parents.length?`<div class="offspring">${t.parents.map((id,i)=>`<button class="small" data-tree="${id}">${i?'Pollen':'Seed'} parent #${id}${forest.archive.get(id)?.alive?'':' †'}</button>`).join('')}</div>${t.parents[0]===t.parents[1]?'<p class="mini" style="margin-top:5px">Self-fertilised: both alleles came from this same parent.</p>':''}`:'<p class="note">Founder: its two starting alleles were drawn when the forest began.</p>';
+  d.innerHTML=`<div class="treeHeader"><div><h2>Tree #${t.id}</h2><div class="mini">Age ${t.age} · born year ${t.born}</div></div><span class="badge">Generation ${t.generation}</span></div>
+    ${!t.alive?`<div class="death">Died in year ${t.deathYear} · phenotype shown at death</div>`:''}
+    <div class="stats"><div class="stat"><span>${t.alive?'Actual height':'Height at death'}</span><b>${t.height.toFixed(1)} <small>m</small></b></div><div class="stat"><span>Inherited height ceiling</span><b>${potential(t).toFixed(1)} <small>m</small></b></div></div>
+    ${resourceRow(t.alive?'Light received':'Light in final year',t.light,'#e6cd82')}${resourceRow(t.alive?'Water demand met':'Water in final year',t.water,'#8bd2ce')}
+    <div class="cause ${!t.alive||t.light<.3||t.water<.45?'warn':''}">${reason}</div>
+    ${blocker?`<div class="row" style="margin-top:9px"><span class="mini">Main shading neighbour: ${blocker.height.toFixed(1)} m</span><button class="link" data-tree="${blocker.id}">Inspect #${blocker.id}</button></div>`:''}
+    <div class="selectedActions"><button id="compareClone" class="small">Test this genome in the lab</button><button id="frameTree" class="small">Centre tree</button></div>
+    <div class="section"><div class="sectionTitle"><h3>Genotype → phenotype</h3></div><div class="mini">Two alleles → their mean trait value. <span style="color:var(--cyan)">Seed-parent copy</span> + <span style="color:var(--pink)">pollen-parent copy</span>${t.parents.length?'':'; founder origins unknown'}. <b>Click an allele value</b> to trace that specific copy through established descendants.</div>${rows}${t.mutations.length?`<p class="note mutant">* ${t.mutations.length} allele${t.mutations.length===1?'':'s'} mutated at inheritance. Hover over a marked allele to see its source and change.</p>`:''}${alleleTraceSummaryHTML()}</div>
+    <div class="section"><h3>Inheritance &amp; reproductive success</h3>${parents}<div class="stats" style="margin-top:12px"><div class="stat"><span>Established offspring, ever</span><b>${t.offspring}</b></div><div class="stat"><span>Offspring alive now</span><b>${living.length}</b></div></div><p class="mini" style="margin-top:8px">Direct offspring; each tree counts for both parents. Seeds that never germinate are excluded.</p>${living.length?`<div class="offspring">${living.slice(-5).map(c=>`<button class="small" data-tree="${c.id}">Child #${c.id}</button>`).join('')}</div>`:''}
+      <div class="lineageBox"><div class="lineageTop"><div><b>Pedigree through the forest</b><div class="mini">Ancestors → this tree → descendants</div></div><button id="lineageBtn" class="small ${lineageVisible?'active':''}" aria-pressed="${lineageVisible}">${lineageVisible?'Hide lineage':'Trace lineage'}</button></div>
+      <div class="lineageCounts">${lc.ancestors} ancestor${lc.ancestors===1?'':'s'} (${lc.livingAncestors} living) · ${lc.descendants} descendant${lc.descendants===1?'':'s'} (${lc.livingDescendants} living)</div>
+      <div class="lineageKey"><span class="ancestor"><i></i>ancestors</span><span class="descendant"><i></i>descendants</span></div>
+      <p class="mini" style="margin-top:7px">This traces pedigree, not a particular allele. Each descendant inherits from two parents, so it may carry only part of this tree’s genetic contribution.</p></div></div>`;
+}
+function experimentOptions(competition){
+  let seed=Math.round(Number($('seed').value));if(!Number.isFinite(seed)||seed<1||seed>2147483647)seed=42017;
+  return {seed,founders:Number($('founders').value),mutation:Number($('mutation').value)/100,
+    rain:Number($('rain').value)/100,wind:Number($('wind').value)/100,competition};
+}
+function signed(v,digits=3){return `${v>=0?'+':''}${v.toFixed(digits)}`;}
+function deltaClass(v){return v>.0005?'up':v<-.0005?'down':'';}
+function runSelectionExperiment(){
+  const btn=$('experimentBtn'),result=$('experimentResult'),years=60;
+  btn.disabled=true;btn.textContent='Running…';
+  // Yield once so the button state paints before the synchronous model run.
+  requestAnimationFrame(()=>setTimeout(()=>{
+    try{
+      const withCompetition=new Forest(experimentOptions(true));
+      const withoutCompetition=new Forest(experimentOptions(false));
+      const baseline=withCompetition.baseline;
+      for(let y=0;y<years;y++){withCompetition.step();withoutCompetition.step();}
+      const onShort=withCompetition.cohort('short'),onTall=withCompetition.cohort('tall');
+      const offShort=withoutCompetition.cohort('short'),offTall=withoutCompetition.cohort('tall');
+      const onShift=withCompetition.stats.gene-baseline,offShift=withoutCompetition.stats.gene-baseline;
+      const between=withCompetition.stats.gene-withoutCompetition.stats.gene;
+      const onTallEdge=onTall.children-onShort.children,offTallEdge=offTall.children-offShort.children;
+      const direction=Math.abs(between)<.002
+        ?`The two forests finished with very similar mean height-potential genes in this run (${Math.abs(between).toFixed(3)} apart).`
+        :between>0
+          ?`With competition, mean inherited height potential finished ${between.toFixed(3)} higher than in the matched no-competition forest.`
+          :`With competition, mean inherited height potential finished ${Math.abs(between).toFixed(3)} lower than in the matched no-competition forest.`;
+      const reproduction=Math.abs(onTallEdge)<.03
+        ?`Under competition, tall- and short-potential founders left similar numbers of living direct offspring.`
+        :onTallEdge>0
+          ?`Under competition, tall-potential founders left ${onTallEdge.toFixed(2)} more living direct offspring per founder than short-potential founders.`
+          :`Under competition, tall-potential founders left ${Math.abs(onTallEdge).toFixed(2)} fewer living direct offspring per founder than short-potential founders.`;
+      result.innerHTML=`<div class="row"><div><b>Same beginning · different contest</b><div class="mini">Year ${years} · seed ${withCompetition.seed} · founder mean ${baseline.toFixed(3)}</div></div></div>
+        <div class="experimentGrid" role="table" aria-label="Competition experiment results">
+          <div class="head">Measure</div><div class="head">Competition ON</div><div class="head">Competition OFF</div>
+          <div>Mean height-potential gene</div><div><b>${withCompetition.stats.gene.toFixed(3)}</b> <span class="experimentDelta ${deltaClass(onShift)}">(${signed(onShift)})</span></div><div><b>${withoutCompetition.stats.gene.toFixed(3)}</b> <span class="experimentDelta ${deltaClass(offShift)}">(${signed(offShift)})</span></div>
+          <div>Living population</div><div>${withCompetition.stats.living.toLocaleString()}</div><div>${withoutCompetition.stats.living.toLocaleString()}</div>
+          <div>Tall-founder offspring / founder</div><div>${fmt(onTall.children,2)}</div><div>${fmt(offTall.children,2)}</div>
+          <div>Short-founder offspring / founder</div><div>${fmt(onShort.children,2)}</div><div>${fmt(offShort.children,2)}</div>
+        </div>
+        <div class="experimentCallout"><b>What happened?</b><br>${direction} ${reproduction}</div>
+        <p class="mini" style="margin-top:9px">Values in parentheses are change from the identical founder mean. This is one stochastic comparison: change the random seed and repeat to see whether the pattern is robust. The two runs have identical starting forests, but random events can diverge once their populations begin to differ.</p>`;
+    }catch(err){result.innerHTML=`<div class="cause warn">Experiment could not run: ${String(err.message||err)}</div>`;}
+    finally{btn.disabled=false;btn.textContent='Run 60-year comparison';}
+  },0));
+}
+function renderSelection(){
+  const a=forest.cohort('short'),b=forest.cohort('tall');
+  $('geneMean').textContent=fmt(forest.stats.gene,3);$('experimentSeed').textContent=`seed ${$('seed').value}`;
+  $('cohort').innerHTML=`<table class="cohortTable"><thead><tr><th></th><th class="shortColour">Short-potential<br>founders</th><th class="tallColour">Tall-potential<br>founders</th></tr></thead><tbody><tr><td>Original trees</td><td>${a.n}</td><td>${b.n}</td></tr><tr><td>Still alive</td><td>${pct(a.survival)}</td><td>${pct(b.survival)}</td></tr><tr><td>Mean light of survivors</td><td>${pct(a.light)}</td><td>${pct(b.light)}</td></tr><tr><td>Mean height of survivors</td><td>${fmt(a.height)} m</td><td>${fmt(b.height)} m</td></tr><tr><td>Living offspring / founder</td><td>${fmt(a.children,2)}</td><td>${fmt(b.children,2)}</td></tr></tbody></table>`;
+  const h=forest.history,recent=h.slice(-5),births=recent.reduce((n,p)=>n+p.births,0);
+  const birthMean=births?recent.reduce((n,p)=>n+(p.birthGene??0)*p.births,0)/births:null;
+  $('chartSummary').textContent=`Founder mean: ${fmt(forest.baseline,3)} · living trees: ${fmt(forest.stats.gene,3)} · recent seedlings: ${fmt(birthMean,3)}${births?` (${births} seedlings)`:' (none yet)'}.`;
+  $('traitMeans').innerHTML=`<table class="cohortTable"><thead><tr><th>Mean trait value</th><th>At the start</th><th>Alive now</th></tr></thead><tbody>${TRAITS.map(({key,name})=>`<tr><td>${name}</td><td>${fmt(mean(forest.founders.map(t=>t.g[key])),3)}</td><td>${fmt(mean(forest.trees.map(t=>t.g[key])),3)}</td></tr>`).join('')}</tbody></table>`;
+  $('yearReport').innerHTML=`${forest.stats.births} new seedlings · ${forest.stats.deaths} deaths · ${forest.seeds.length} dormant seeds.${Object.entries(forest.deaths).length?'<br>'+Object.entries(forest.deaths).map(([cause,n])=>`${cause}: ${n}`).join(' · '):''}`;
+  $('eventNote').textContent=forest.events.slice(-2).map(e=>`Year ${e.year}: ${e.text}.`).join(' ');
+  if(activeTab==='selection')drawChart();
+}
+function drawChart(){
+  const canvas=$('chart'),r=canvas.getBoundingClientRect();if(!r.width)return;
+  const w=r.width,h=r.height,ratio=Math.min(2,devicePixelRatio||1);canvas.width=w*ratio;canvas.height=h*ratio;
+  const c=canvas.getContext('2d');c.setTransform(ratio,0,0,ratio,0,0);c.clearRect(0,0,w,h);
+  const pad={l:31,r:12,t:13,b:25},W=w-pad.l-pad.r,H=h-pad.t-pad.b;
+  const x=year=>pad.l+year/Math.max(20,forest.year)*W,y=value=>pad.t+(1-value)*H;
+  c.font='10px system-ui';c.lineWidth=1;
+  for(const v of [0,.25,.5,.75,1]){c.fillStyle='#92a48e';c.textAlign='right';c.fillText(v.toFixed(v%1?2:0),pad.l-7,y(v)+3);c.strokeStyle='#304033';c.beginPath();c.moveTo(pad.l,y(v));c.lineTo(w-pad.r,y(v));c.stroke();}
+  c.setLineDash([4,4]);c.strokeStyle='#8a9487';c.beginPath();c.moveTo(pad.l,y(forest.baseline));c.lineTo(w-pad.r,y(forest.baseline));c.stroke();c.setLineDash([]);
+  const history=forest.history;
+  function line(values,colour){c.strokeStyle=colour;c.lineWidth=2;c.beginPath();let previous=false;for(let i=0;i<history.length;i++){const v=values[i];if(v==null){previous=false;continue;}const X=x(history[i].year),Y=y(v);if(previous)c.lineTo(X,Y);else c.moveTo(X,Y);previous=true;}c.stroke();}
+  line(history.map(p=>p.gene),'#d8e9a2');
+  line(history.map((p,i)=>{const group=history.slice(Math.max(0,i-4),i+1),n=group.reduce((a,b)=>a+b.births,0);return n?group.reduce((a,b)=>a+(b.birthGene??0)*b.births,0)/n:null;}),'#8bd2ce');
+  c.fillStyle='#92a48e';c.textAlign='left';c.fillText('Year 0',pad.l,h-7);c.textAlign='right';c.fillText('Year '+Math.max(20,forest.year),w-pad.r,h-7);
+  canvas.setAttribute('aria-label',`Inherited height potential, 0 to 1. ${$('chartSummary').textContent}`);
+}
+function project(x,y){return {x:(x-y)*TW/2,y:(x+y)*TH/2};}
+function fitCamera(){
+  const available=Math.max(180,ch-290);fitScale=Math.min((cw-38)/(GRID*TW),available/(GRID*TH+165));
+  camera.z=Math.max(.23,fitScale);camera.x=cw*.5;camera.y=(ch-185)-GRID*TH*camera.z;worldDirty=true;
+}
+function resize(){const r=world.getBoundingClientRect();cw=r.width;ch=r.height;dpr=Math.min(2,devicePixelRatio||1);world.width=cw*dpr;world.height=ch*dpr;fitCamera();if(activeTab==='lab')renderLab();if(activeTab==='selection')drawChart();}
+function rebuildTerrain(){
+  terrain.width=GRID*TW+4;terrain.height=GRID*TH+18;const c=terrain.getContext('2d'),ox=GRID*TW/2+2;
+  // A shallow side to the island makes the stand's space legible.
+  const bottom=project(GRID-1,GRID-1),left=project(0,GRID-1),right=project(GRID-1,0);
+  c.fillStyle='#283527';c.beginPath();c.moveTo(ox+left.x-TW/2,left.y);c.lineTo(ox+bottom.x,bottom.y+TH/2);c.lineTo(ox+right.x+TW/2,right.y);c.lineTo(ox+right.x+TW/2,right.y+9);c.lineTo(ox+bottom.x,bottom.y+TH/2+9);c.lineTo(ox+left.x-TW/2,left.y+9);c.closePath();c.fill();
+  const bases=[[67,87,45],[61,82,43],[88,76,43],[79,92,79]],base=bases[season];
+  for(let y=0;y<GRID;y++)for(let x=0;x<GRID;x++){
+    const p=project(x,y),cell=forest.cells[y*GRID+x],noise=(Math.sin(x*17.3+y*37.1)*.5+.5)*6;
+    const f=(cell.fertility-.8)*32;
+    c.fillStyle=`rgb(${base[0]+f+noise},${base[1]+f+noise},${base[2]+f*.5})`;
+    c.beginPath();c.moveTo(ox+p.x,p.y);c.lineTo(ox+p.x+TW/2,p.y+TH/2);c.lineTo(ox+p.x,p.y+TH);c.lineTo(ox+p.x-TW/2,p.y+TH/2);c.closePath();c.fill();
+    if((x*7+y*13)%11===0){c.fillStyle='#d4dab512';c.fillRect(ox+p.x+4,p.y+8,2,1);}
+  }
+}
+function mixColour(a,b,v){return `rgb(${a.map((n,i)=>Math.round(n+(b[i]-n)*clamp(v))).join(',')})`;}
+function colourFor(t){
+  if(overlay==='height'||overlay==='roots'||overlay==='wood')return mixColour([104,164,197],[238,203,113],t.g[overlay]);
+  if(overlay==='light')return mixColour([143,85,158],[249,220,129],t.light);
+  if(overlay==='water')return mixColour([181,121,79],[125,217,208],t.water);
+  if(overlay==='generation')return t.generation===0?'#8eaf81':`hsl(${260+(t.generation%5)*15} 48% ${66-Math.min(9,t.generation)}%)`;
+  const autumn=season===2;return `hsl(${autumn?26+t.g.crown*22:87+t.g.roots*30} ${autumn?43:29+t.g.crown*13}% ${31+t.g.growth*13+clamp(t.light)*5}%)`;
+}
+function shape(t){const p=project(t.x,t.y),h=t.height*HP,cr=Math.min(crownRadius(t)*TW*.69,h*.56+1.4);return {x:p.x,y:p.y,h,cr,cy:p.y-h+cr*.64};}
+function ellipse(c,x,y,rx,ry,fill){c.beginPath();c.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),0,0,Math.PI*2);c.fillStyle=fill;c.fill();}
+function paintTree(c,t,colour,selected=false,diagnostic=false){
+  const s=shape(t),{x,y,h,cr,cy}=s,tw=1+t.g.wood*3+t.height*.05;
+  ellipse(c,x+3,y+1,cr,cr*.36,'#09160f24');
+  c.lineCap='round';c.strokeStyle='#735637';c.lineWidth=tw;c.beginPath();c.moveTo(x,y);c.lineTo(x,cy);c.stroke();
+  c.strokeStyle='#b59b6552';c.lineWidth=Math.max(.7,tw*.25);c.beginPath();c.moveTo(x-tw*.22,y-1);c.lineTo(x-tw*.22,cy);c.stroke();
+  if(season===3&&overlay==='natural'&&!diagnostic){
+    c.strokeStyle='#99846a';c.lineWidth=Math.max(.7,tw*.42);
+    for(let i=-2;i<=2;i++){c.beginPath();c.moveTo(x,cy+cr*.9);c.lineTo(x+i*cr*.42,cy+Math.abs(i)*cr*.2);c.stroke();}
+  } else {
+    const broad=.86+t.g.crown*.19;
+    const clusters=[[-.46,.15,.62],[.43,.13,.58],[0,-.21,.71],[-.2,.50,.50],[.28,.44,.48]];
+    for(const [dx,dy,r] of clusters)ellipse(c,x+dx*cr,cy+dy*cr,cr*r*broad,cr*r,colour);
+    ellipse(c,x-cr*.28,cy-cr*.28,cr*.32,cr*.21,'#eff5be22');ellipse(c,x+cr*.42,cy+cr*.40,cr*.29,cr*.28,'#07180f12');
+  }
+  if(selected){c.strokeStyle='#f0ecc4';c.lineWidth=1.5/Math.max(.5,camera.z);c.setLineDash([3,3]);c.beginPath();c.ellipse(x,cy+cr*.1,cr*1.2+2,cr*1.18+2,0,0,Math.PI*2);c.stroke();c.setLineDash([]);}
+  return s;
+}
+function lineageColour(kind){return kind==='ancestor'?'#8bd2ce':kind==='descendant'?'#e6cc76':'#f0ecc4';}
+function drawLineageBehind(){
+  if(!lineageVisible||!lineageCache)return;
+  const related=new Set([selectedId,...lineageCache.ancestors.keys(),...lineageCache.descendants.keys()]);
+  ctx.save();ctx.lineCap='round';
+  for(const childId of related){
+    const child=forest.archive.get(childId);if(!child)continue;
+    for(const parentId of new Set(child.parents)){
+      if(!related.has(parentId))continue;
+      const parent=forest.archive.get(parentId);if(!parent)continue;
+      const a=shape(parent),b=shape(child),kind=lineageCache.descendants.has(childId)?'descendant':'ancestor';
+      ctx.strokeStyle=lineageColour(kind)+(parent.alive&&child.alive?'70':'38');ctx.lineWidth=1.35/Math.max(.45,camera.z);ctx.setLineDash(parent.alive&&child.alive?[]:[4/camera.z,4/camera.z]);
+      ctx.beginPath();ctx.moveTo(a.x,a.cy);ctx.lineTo(b.x,b.cy);ctx.stroke();
+    }
+  }
+  ctx.setLineDash([]);
+  for(const id of related){
+    if(id===selectedId)continue;const node=forest.archive.get(id);if(!node||node.alive)continue;
+    const p=project(node.x,node.y),kind=lineageKind(id),col=lineageColour(kind);ctx.strokeStyle=col+'88';ctx.lineWidth=1.4/Math.max(.45,camera.z);
+    ctx.beginPath();ctx.moveTo(p.x-3/camera.z,p.y-3/camera.z);ctx.lineTo(p.x+3/camera.z,p.y+3/camera.z);ctx.moveTo(p.x+3/camera.z,p.y-3/camera.z);ctx.lineTo(p.x-3/camera.z,p.y+3/camera.z);ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawLineageHalo(t,kind){
+  if(!kind||kind==='selected')return;const s=shape(t);ctx.save();ctx.strokeStyle=lineageColour(kind);ctx.lineWidth=2/Math.max(.5,camera.z);ctx.globalAlpha=.95;ctx.beginPath();ctx.ellipse(s.x,s.cy+s.cr*.08,s.cr*1.25+2,s.cr*1.22+2,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+}
+function alleleTraceColour(kind){return kind==='exact'?'#8bd2ce':kind==='changed'?'#efb87b':kind==='mixed'?'#d8d59e':'#f0ecc4';}
+function drawAlleleTraceBehind(){
+  if(!alleleTrace||!alleleTraceCache)return;
+  ctx.save();ctx.lineCap='round';
+  for(const edge of alleleTraceCache.edges){
+    const parent=forest.archive.get(edge.parentId),child=forest.archive.get(edge.childId);if(!parent||!child)continue;
+    const a=shape(parent),b=shape(child),col=alleleTraceColour(edge.status);
+    ctx.strokeStyle=col+(parent.alive&&child.alive?'82':'48');ctx.lineWidth=(edge.status==='exact'?1.65:1.35)/Math.max(.45,camera.z);
+    ctx.setLineDash(edge.status==='changed'?[4/camera.z,3/camera.z]:[]);ctx.beginPath();ctx.moveTo(a.x,a.cy);ctx.lineTo(b.x,b.cy);ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  for(const [id] of alleleTraceCache.byTree){
+    const node=forest.archive.get(id);if(!node||node.alive)continue;const p=project(node.x,node.y),kind=alleleTraceTreeKind(id),col=alleleTraceColour(kind);
+    ctx.strokeStyle=col+'a0';ctx.lineWidth=1.5/Math.max(.45,camera.z);ctx.beginPath();ctx.moveTo(p.x-3/camera.z,p.y-3/camera.z);ctx.lineTo(p.x+3/camera.z,p.y+3/camera.z);ctx.moveTo(p.x+3/camera.z,p.y-3/camera.z);ctx.lineTo(p.x-3/camera.z,p.y+3/camera.z);ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawAlleleTraceHalo(t,kind){
+  if(!kind)return;const s=shape(t);ctx.save();ctx.globalAlpha=.98;
+  if(kind==='mixed'){
+    ctx.strokeStyle='#8bd2ce';ctx.lineWidth=2.1/Math.max(.5,camera.z);ctx.setLineDash([]);ctx.beginPath();ctx.ellipse(s.x,s.cy+s.cr*.08,s.cr*1.30+3,s.cr*1.27+3,0,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='#efb87b';ctx.lineWidth=1.8/Math.max(.5,camera.z);ctx.setLineDash([4/camera.z,3/camera.z]);ctx.beginPath();ctx.ellipse(s.x,s.cy+s.cr*.08,s.cr*1.20+1,s.cr*1.17+1,0,0,Math.PI*2);ctx.stroke();ctx.restore();return;
+  }
+  ctx.strokeStyle=alleleTraceColour(kind);ctx.lineWidth=(kind==='source'?2.6:2.1)/Math.max(.5,camera.z);ctx.setLineDash(kind==='changed'?[4/camera.z,3/camera.z]:[]);ctx.beginPath();ctx.ellipse(s.x,s.cy+s.cr*.08,s.cr*1.28+2,s.cr*1.25+2,0,0,Math.PI*2);ctx.stroke();
+  if(kind==='source'){ctx.setLineDash([]);ctx.globalAlpha=.55;ctx.beginPath();ctx.ellipse(s.x,s.cy+s.cr*.08,s.cr*1.40+4,s.cr*1.37+4,0,0,Math.PI*2);ctx.stroke();}
+  ctx.restore();
+}
+function drawWorld(){
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const bg=ctx.createLinearGradient(0,0,0,ch);bg.addColorStop(0,['#254638','#244334','#493e2b','#374b47'][season]);bg.addColorStop(1,'#11251d');ctx.fillStyle=bg;ctx.fillRect(0,0,cw,ch);
+  ctx.save();ctx.translate(camera.x,camera.y);ctx.scale(camera.z,camera.z);
+  const centre=project((GRID-1)/2,(GRID-1)/2);ellipse(ctx,centre.x+8,centre.y+35,GRID*TW*.44,GRID*TH*.43,'#04120d28');
+  ctx.drawImage(terrain,-terrain.width/2,-TH/2);
+  if(alleleTrace)drawAlleleTraceBehind();else drawLineageBehind();
+  const selected=treeAt();
+  if(selected){
+    const p=project(selected.x,selected.y),rr=rootRadius(selected);
+    ctx.strokeStyle='#edc39188';ctx.lineWidth=1;ctx.setLineDash([3,4]);ctx.beginPath();ctx.ellipse(p.x,p.y,rr*TW*.707,rr*TH*.707,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+  }
+  const objects=[...forest.trees.map(t=>({type:'tree',t,key:t.x+t.y})),...forest.logs.map(t=>({type:'log',t,key:t.x+t.y-.01}))].sort((a,b)=>a.key-b.key);
+  hits=[];
+  for(const {type,t} of objects){
+    if(type==='log'){
+      const p=project(t.x,t.y),len=Math.min(95,t.height*3.1);ctx.globalAlpha=clamp(1-(forest.year-t.year)/24,.1,1);ctx.strokeStyle='#806044';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+Math.cos(t.angle)*len,p.y+Math.sin(t.angle)*len*.5);ctx.stroke();ctx.globalAlpha=1;
+    }else{
+      const s=shape(t),sx=camera.x+s.x*camera.z,sy=camera.y+s.cy*camera.z;
+      if(sx<-100||sx>cw+100||sy>ch+150||sy<-150)continue;
+      const traceKind=alleleTraceTreeKind(t.id),kind=lineageKind(t.id);
+      if(alleleTrace&&!traceKind)ctx.globalAlpha=.20;else if(lineageVisible&&!kind)ctx.globalAlpha=.24;
+      paintTree(ctx,t,colourFor(t),t.id===selectedId);ctx.globalAlpha=1;if(alleleTrace)drawAlleleTraceHalo(t,traceKind);else drawLineageHalo(t,kind);
+      hits.push({id:t.id,x:sx,y:sy,r:Math.max(4,s.cr*camera.z*1.15),base:camera.y+s.y*camera.z});
+    }
+  }
+  if(selected){
+    const s=shape(selected),r=selected.alive?forest.resources(selected,true):null,shade=r?.blockers[0]?.tree;
+    if(shade){const a=shape(shade);ctx.strokeStyle='#e4ca8caf';ctx.lineWidth=1/camera.z;ctx.setLineDash([4/camera.z,4/camera.z]);ctx.beginPath();ctx.moveTo(s.x,s.cy);ctx.lineTo(a.x,a.cy);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#e4ca8c';ctx.beginPath();ctx.arc(a.x,a.cy,4/camera.z,0,Math.PI*2);ctx.stroke();}
+    if(!selected.alive){ctx.strokeStyle='#efb87b';ctx.lineWidth=2/camera.z;ctx.beginPath();ctx.moveTo(s.x-5,s.y-5);ctx.lineTo(s.x+5,s.y+5);ctx.moveTo(s.x+5,s.y-5);ctx.lineTo(s.x-5,s.y+5);ctx.stroke();}
+  }
+  ctx.restore();
+  if(selected){
+    const s=shape(selected),sx=camera.x+s.x*camera.z,sy=camera.y+(s.y-s.h-s.cr*.25)*camera.z;
+    const text=`#${selected.id} · ${selected.height.toFixed(1)} m${selected.alive?'':' · died'}`;
+    ctx.font='11px system-ui';const width=ctx.measureText(text).width+16;
+    if(sx>0&&sx<cw&&sy>145&&sy<ch-130){ctx.fillStyle='#0a1815e6';ctx.beginPath();ctx.roundRect(sx-width/2,sy-23,width,23,5);ctx.fill();ctx.fillStyle='#edf2df';ctx.textAlign='center';ctx.fillText(text,sx,sy-8);}
+  }
+  worldDirty=false;
+}
+function setupLab(){
+  $('labSliders').innerHTML=TRAITS.map(({key,name})=>`<div class="labTrait"><label class="row" for="lab-${key}"><span>${name}</span><output id="lab-read-${key}">0.50</output></label><input id="lab-${key}" data-lab-gene="${key}" type="range" min="0" max="100" value="50"></div>`).join('');
+  $('labSliders').addEventListener('input',e=>{const key=e.target.dataset.labGene;if(!key)return;const v=Number(e.target.value)/100;labDNA[key]=[v,v];labSource='Edited sliders set both alleles for that trait. Other alleles stay unchanged.';renderLab();});
+}
+function useSelectedGenome(){const t=treeAt();if(!t)return;labDNA=Object.fromEntries(TRAITS.map(({key})=>[key,t.dna[key].slice()]));labSource=`Copied the exact allele pairs of tree #${t.id}. Sliders show their means; editing a slider sets that trait’s two alleles together.`;showTab('lab');renderLab();}
+function renderLab(){
+  const light=Number($('labLight').value)/100,twins=cloneTrial(labDNA,light);$('labLightRead').textContent=pct(light);
+  $('labSunHeight').textContent=twins[0].height.toFixed(1)+' m';$('labShadeHeight').textContent=twins[1].height.toFixed(1)+' m';
+  $('labConclusion').textContent=`Same inherited ceiling: ${potential(twins[0]).toFixed(1)} m. ${light===1?'Equal light gives identical growth.':`Different light produces a ${(twins[0].height-twins[1].height).toFixed(1)} m height difference at age 20.`}`;
+  $('labGenomeSource').textContent=labSource;
+  for(const {key} of TRAITS){const v=expression(labDNA)[key];$('lab-'+key).value=v*100;$('lab-read-'+key).textContent=v.toFixed(2);}
+  const canvas=$('labCanvas'),r=canvas.getBoundingClientRect();if(!r.width)return;
+  const ratio=Math.min(2,devicePixelRatio||1),w=r.width,h=r.height;canvas.width=w*ratio;canvas.height=h*ratio;const c=canvas.getContext('2d');c.setTransform(ratio,0,0,ratio,0,0);c.clearRect(0,0,w,h);
+  const floor=h-32,scale=Math.min(1.12,(h-62)/(32*HP));
+  c.fillStyle='#8da580';c.font='10px system-ui';c.textAlign='center';c.fillText('IDENTICAL GENOMES · AGE 20',w/2,19);
+  c.strokeStyle='#4d6449';c.beginPath();c.moveTo(15,floor);c.lineTo(w-15,floor);c.stroke();
+  c.strokeStyle='#314b39';c.setLineDash([3,4]);c.beginPath();c.moveTo(w/2,35);c.lineTo(w/2,floor);c.stroke();c.setLineDash([]);
+  twins.forEach((t,i)=>{
+    const x=w*(i?.75:.25);c.save();c.translate(x,floor);c.scale(scale,scale);
+    const ideal={...t,x:0,y:0,height:potential(t)},ghost=shape(ideal);
+    c.strokeStyle='#c6d5ba66';c.setLineDash([4,4]);c.lineWidth=1;const capY=-potential(t)*HP;c.beginPath();c.moveTo(-ghost.cr,capY);c.lineTo(ghost.cr,capY);c.moveTo(0,capY);c.lineTo(0,0);c.stroke();c.setLineDash([]);
+    const temp={...t,x:0,y:0};paintTree(c,temp,i?`hsl(118 24% ${31+light*16}%)`:'#85ac55',false,true);
+    const rr=rootRadius(t);c.strokeStyle='#ad8a5777';c.lineWidth=1.3;
+    for(let k=-2;k<=2;k++){c.beginPath();c.moveTo(0,2);c.lineTo(k*rr*8,7+rr*3);c.stroke();}
+    c.restore();c.fillStyle='#b9cbb1';c.font='10px system-ui';c.fillText(i?`${pct(light)} light`:'100% light',x,h-8);
+  });
+  canvas.setAttribute('aria-label',`Same genes at age 20: full light ${twins[0].height.toFixed(1)} metres, ${pct(light)} light ${twins[1].height.toFixed(1)} metres; potential ${potential(twins[0]).toFixed(1)} metres.`);
+  renderGeneComparison();
+}
+function renderGeneComparison(){
+  const low=Number($('geneLow').value)/100,high=Number($('geneHigh').value)/100;
+  $('geneLowRead').textContent=`${low.toFixed(2)} + ${low.toFixed(2)}`;$('geneHighRead').textContent=`${high.toFixed(2)} + ${high.toFixed(2)}`;
+  const lowDNA=Object.fromEntries(TRAITS.map(({key})=>[key,key==='height'?[low,low]:labDNA[key].slice()]));
+  const highDNA=Object.fromEntries(TRAITS.map(({key})=>[key,key==='height'?[high,high]:labDNA[key].slice()]));
+  const trees=[growClone(lowDNA,1,20),growClone(highDNA,1,20)],diff=trees[1].height-trees[0].height;
+  $('geneLowHeight').textContent=trees[0].height.toFixed(1)+' m';$('geneHighHeight').textContent=trees[1].height.toFixed(1)+' m';
+  $('geneLowPotential').textContent=`genetic ceiling ${potential(trees[0]).toFixed(1)} m`;$('geneHighPotential').textContent=`genetic ceiling ${potential(trees[1]).toFixed(1)} m`;
+  if(Math.abs(high-low)<.0001)$('geneConclusion').textContent='Matching height alleles give matching growth when the environment and all other genes are also identical.';
+  else $('geneConclusion').textContent=`Only the height genes differ. At age 20 that produces a ${Math.abs(diff).toFixed(1)} m realised height difference under the same conditions${diff<0?' — here the left tree is taller because its height alleles are higher.':''}.`;
+  const canvas=$('geneCanvas'),r=canvas.getBoundingClientRect();if(!r.width)return;
+  const ratio=Math.min(2,devicePixelRatio||1),w=r.width,h=r.height;canvas.width=w*ratio;canvas.height=h*ratio;const c=canvas.getContext('2d');c.setTransform(ratio,0,0,ratio,0,0);c.clearRect(0,0,w,h);
+  const floor=h-32,scale=Math.min(1.12,(h-62)/(32*HP));
+  c.fillStyle='#8da580';c.font='10px system-ui';c.textAlign='center';c.fillText('IDENTICAL ENVIRONMENT · AGE 20 · 100% LIGHT',w/2,19);
+  c.strokeStyle='#4d6449';c.beginPath();c.moveTo(15,floor);c.lineTo(w-15,floor);c.stroke();
+  c.strokeStyle='#314b39';c.setLineDash([3,4]);c.beginPath();c.moveTo(w/2,35);c.lineTo(w/2,floor);c.stroke();c.setLineDash([]);
+  trees.forEach((t,i)=>{
+    const x=w*(i?.75:.25);c.save();c.translate(x,floor);c.scale(scale,scale);
+    const ideal={...t,x:0,y:0,height:potential(t)},ghost=shape(ideal),capY=-potential(t)*HP;
+    c.strokeStyle='#c6d5ba66';c.setLineDash([4,4]);c.lineWidth=1;c.beginPath();c.moveTo(-ghost.cr,capY);c.lineTo(ghost.cr,capY);c.moveTo(0,capY);c.lineTo(0,0);c.stroke();c.setLineDash([]);
+    const temp={...t,x:0,y:0};paintTree(c,temp,i?'#b6a95e':'#719dbc',false,true);
+    const rr=rootRadius(t);c.strokeStyle='#ad8a5777';c.lineWidth=1.3;for(let k=-2;k<=2;k++){c.beginPath();c.moveTo(0,2);c.lineTo(k*rr*8,7+rr*3);c.stroke();}
+    c.restore();c.fillStyle='#b9cbb1';c.font='10px system-ui';c.fillText(`height genes ${t.g.height.toFixed(2)}`,x,h-8);
+  });
+  canvas.setAttribute('aria-label',`Same environment at age 20: height genes ${low.toFixed(2)} produce ${trees[0].height.toFixed(1)} metres; height genes ${high.toFixed(2)} produce ${trees[1].height.toFixed(1)} metres.`);
+}
+function zoomBy(factor,x=cw/2,y=ch/2){const old=camera.z;camera.z=clamp(old*factor,fitScale*.55,4);const q=camera.z/old;camera.x=x-(x-camera.x)*q;camera.y=y-(y-camera.y)*q;worldDirty=true;}
+world.addEventListener('pointerdown',e=>{if(e.button!==0)return;world.setPointerCapture(e.pointerId);drag={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false};world.classList.add('dragging');});
+world.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>5)drag.moved=true;if(drag.moved){camera.x+=dx;camera.y+=dy;worldDirty=true;}drag.x=e.clientX;drag.y=e.clientY;});
+world.addEventListener('pointerup',e=>{if(!drag||drag.id!==e.pointerId)return;const moved=drag.moved;drag=null;world.classList.remove('dragging');if(moved)return;
+  const r=world.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  // Follow paint order so a click selects the visible foreground crown.
+  const hit=hits.slice().reverse().find(p=>((x-p.x)/p.r)**2+((y-p.y)/p.r)**2<1||Math.abs(x-p.x)<4&&y>p.y&&y<p.base);
+  chooseTree(hit?.id??null);if(hit)showTab('tree');
+});
+world.addEventListener('pointercancel',()=>{drag=null;world.classList.remove('dragging');});
+world.addEventListener('wheel',e=>{e.preventDefault();const r=world.getBoundingClientRect();zoomBy(Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top);},{passive:false});
+world.addEventListener('keydown',e=>{if(e.key==='+'||e.key==='=')zoomBy(1.2);else if(e.key==='-')zoomBy(1/1.2);else if(e.key==='0')fitCamera();else if(e.key===' '){e.preventDefault();setPaused(!paused);}else if(e.key.startsWith('Arrow')){e.preventDefault();camera.x+=(e.key==='ArrowLeft'?30:e.key==='ArrowRight'?-30:0);camera.y+=(e.key==='ArrowUp'?30:e.key==='ArrowDown'?-30:0);worldDirty=true;}});
+$('zoomIn').onclick=()=>zoomBy(1.25);$('zoomOut').onclick=()=>zoomBy(.8);$('fitBtn').onclick=fitCamera;
+$('pauseBtn').onclick=()=>setPaused(!paused);
+document.querySelectorAll('.speed').forEach(b=>b.onclick=()=>{speed=Number(b.dataset.speed);document.querySelectorAll('.speed').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',x===b);});updateSeasonLabel();});
+$('stepBtn').onclick=()=>{setPaused(true);season=0;seasonTime=0;advance(10);rebuildTerrain();toast('Advanced 10 years · paused for inspection');};
+$('overlay').onchange=e=>{overlay=e.target.value;updateLegend();worldDirty=true;};
+$('rain').oninput=()=>changeEnvironment();$('wind').oninput=()=>changeEnvironment();$('competition').onchange=()=>changeEnvironment();
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{const p=b.dataset.preset,settings={woodland:[94,22],drought:[40,22],wind:[94,95]}[p];$('rain').value=settings[0];$('wind').value=settings[1];changeEnvironment(p);toast('Conditions changed for the current forest');});
+$('founders').oninput=e=>$('founderRead').textContent=e.target.value;
+$('mutation').oninput=e=>{forest.mutation=Number(e.target.value)/100;$('mutationRead').textContent=e.target.value+'%';};
+$('resetBtn').onclick=()=>{startForest();toast('Restarted with the same seed');};$('newBtn').onclick=()=>{startForest(true);toast('New forest, new starting genes');};
+document.querySelectorAll('[data-tab]').forEach(b=>{b.onclick=()=>showTab(b.dataset.tab);b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const tabs=[...document.querySelectorAll('[data-tab]')],i=tabs.indexOf(b),n=e.key==='Home'?0:e.key==='End'?2:(i+(e.key==='ArrowRight'?1:2))%3;tabs[n].focus();showTab(tabs[n].dataset.tab);};});
+document.querySelectorAll('[data-find]').forEach(b=>b.onclick=()=>{
+  let candidates=forest.trees.slice(),t;
+  if(b.dataset.find==='canopy')t=candidates.sort((a,b)=>b.height-a.height)[0];
+  else if(b.dataset.find==='shade')t=candidates.filter(t=>t.age>4).sort((a,b)=>a.light-b.light)[0]||candidates[0];
+  else t=candidates.filter(t=>t.generation>0).sort((a,b)=>b.born-a.born||b.id-a.id)[0];
+  if(t)selectAndShow(t.id);else toast(b.dataset.find==='child'?'No established offspring yet. Advance a few years.':'There are no living trees.');
+});
+$('treeDetails').addEventListener('click',e=>{
+  const target=e.target.closest('button');if(!target)return;
+  if(target.dataset.alleleTrait){
+    const next={sourceId:Number(target.dataset.alleleTree),key:target.dataset.alleleTrait,slot:Number(target.dataset.alleleSlot)};
+    const same=alleleTrace&&alleleTrace.sourceId===next.sourceId&&alleleTrace.key===next.key&&alleleTrace.slot===next.slot;
+    alleleTrace=same?null:next;alleleTraceCache=alleleTrace?computeAlleleTrace(next.sourceId,next.key,next.slot):null;
+    lineageVisible=false;lineageCache=null;renderInspector();updateLegend();worldDirty=true;
+    const trait=TRAITS.find(t=>t.key===next.key);toast(alleleTrace?`Tracing ${trait?.name||next.key} allele ${next.slot+1}: cyan unchanged copies, orange mutation branches`:'Allele trace hidden');return;
+  }
+  if(target.id==='alleleTraceClear'){alleleTrace=null;alleleTraceCache=null;renderInspector();updateLegend();worldDirty=true;toast('Allele trace hidden');return;}
+  if(target.dataset.tree)selectAndShow(Number(target.dataset.tree));
+  if(target.id==='compareClone')useSelectedGenome();
+  if(target.id==='frameTree')chooseTree(selectedId,true);
+  if(target.id==='lineageBtn'){
+    if(alleleTrace){alleleTrace=null;alleleTraceCache=null;}
+    lineageVisible=!lineageVisible;lineageCache=lineageVisible&&selectedId!=null?computeLineage(selectedId):null;renderInspector();updateLegend();worldDirty=true;toast(lineageVisible?'Lineage highlighted: cyan ancestors, yellow descendants':'Lineage hidden');
+  }
+});
+$('gapBtn').onclick=()=>{const n=forest.gap(selectedId);updateUI();worldDirty=true;toast(n?`Opened a gap: removed ${n} trees`:'No trees taller than 3 m in this patch. Select a canopy tree.');};
+$('experimentBtn').onclick=runSelectionExperiment;
+$('labLight').oninput=renderLab;$('geneLow').oninput=renderGeneComparison;$('geneHigh').oninput=renderGeneComparison;$('useSelectedBtn').onclick=useSelectedGenome;
+$('helpBtn').onclick=()=>{setPaused(true);$('help').showModal();};$('closeHelp').onclick=()=>$('help').close();
+$('help').addEventListener('click',e=>{if(e.target===$('help')){const r=$('help').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('help').close();}});
+window.addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>{lastFrame=0;});
+function frame(time){
+  const dt=lastFrame?Math.min(.08,(time-lastFrame)/1000):0;lastFrame=time;
+  if(!paused&&!document.hidden){seasonTime+=dt*speed;let changed=false;while(seasonTime>=1){seasonTime-=1;season=(season+1)%4;if(season===0)advance();changed=true;}if(changed){rebuildTerrain();updateSeasonLabel();worldDirty=true;}}
+  if(worldDirty&&time-lastDraw>20){drawWorld();lastDraw=time;}
+  requestAnimationFrame(frame);
+}
+setupLab();resize();startForest();requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
